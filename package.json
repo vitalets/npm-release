@@ -7,5 +7,8 @@
     "type": "git",
     "url": "https://github.com/vitalets/npm-release.git"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.9.1"
+  }
 }
