@@ -4,7 +4,7 @@
  * opens a fresh [Unreleased] section above it, and prints the release notes to
  * stdout for use in CI (e.g. GitHub Release body).
  *
- * Usage:
+ * Usage (Node.js ≥ 24):
  *   node scripts/changelog.mts <version>
  */
 import fs from 'node:fs';

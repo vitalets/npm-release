@@ -37,12 +37,12 @@ No `npm-token` input. The caller must:
 ### Composite Action — Inputs Are Always Strings
 All `if:` conditionals use `== 'true'` / `!= 'true'` string comparisons, never bare boolean checks.
 
-### changelog.mts Requires Node.js ≥ 22
+### changelog.mts Requires Node.js ≥ 24
 The script is TypeScript (`.mts`). It runs via:
 ```
-node --experimental-strip-types $GITHUB_ACTION_PATH/scripts/changelog.mts <version>
+node $GITHUB_ACTION_PATH/scripts/changelog.mts <version>
 ```
-The caller must set `node-version: 22` (or higher) in `actions/setup-node`.
+The caller must set `node-version: 24` (or higher) in `actions/setup-node`.
 
 ### Pre-releases
 - Version bumped with `--preid=beta` (e.g. `1.2.0-beta.0`)
@@ -108,7 +108,7 @@ The calling repo must maintain a `CHANGELOG.md` with:
 ## Running the Changelog Script Locally
 
 ```bash
-node --experimental-strip-types scripts/changelog.mts <version>
+node scripts/changelog.mts <version>
 ```
 
 Must be run from the **caller's repo root** (where `CHANGELOG.md` and `package.json` live).
