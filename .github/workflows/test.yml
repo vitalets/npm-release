@@ -34,6 +34,9 @@ jobs:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
+      - name: Capture version before release
+        run: echo "ORIGINAL_VERSION=$(npm pkg get version | tr -d '"')" >> $GITHUB_ENV
+
       - uses: ./
         with:
           release-version: patch
@@ -42,3 +45,14 @@ jobs:
           # Intentionally fake — guards against accidental git push / GitHub Release
           # if dry-run ever stops working. The real token is not needed for dry-run.
           github-token: fake-token
+
+      - name: Verify dry-run results
+        run: |
+          VERSION=$(npm pkg get version | tr -d '"')
+          # version was bumped in package.json
+          [ "$VERSION" != "$ORIGINAL_VERSION" ] || (echo "ERROR: version was not bumped" && exit 1)
+          # CHANGELOG.md contains the new version heading
+          grep -q "## \[$VERSION\]" CHANGELOG.md || (echo "ERROR: version heading missing from CHANGELOG.md" && exit 1)
+          # no git commit was created (HEAD unchanged)
+          git diff --name-only HEAD | grep -q "package.json" || (echo "ERROR: package.json not in dirty working tree — bump may not have run" && exit 1)
+          echo "OK: version=$VERSION, changelog updated, no commit created"
