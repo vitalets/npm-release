@@ -8,6 +8,7 @@
  *   node scripts/changelog.mts <version>
  */
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const CHANGELOG_PATH = 'CHANGELOG.md';
 const PACKAGE_JSON_PATH = 'package.json';
@@ -15,7 +16,9 @@ const logger = console;
 
 const version = process.argv[2];
 
-main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
 
 /** Updates the changelog for the requested release version. */
 function main() {
@@ -33,7 +36,7 @@ function main() {
 }
 
 /** Converts the Unreleased section into a dated release section. */
-function stampChangelog(text: string, version: string) {
+export function stampChangelog(text: string, version: string) {
   const date = new Date().toISOString().slice(0, 10);
   const updated = text.replace('## [Unreleased]', `## [Unreleased]\n\n## [${version}] - ${date}`);
   if (updated === text) {
@@ -44,7 +47,7 @@ function stampChangelog(text: string, version: string) {
 }
 
 /** Reads the section body for a released version. */
-function extractReleaseNotes(text: string, version: string) {
+export function extractReleaseNotes(text: string, version: string) {
   const lines = text.split('\n');
   const headingIndex = lines.findIndex((l) => l.startsWith(`## [${version}]`));
   const bodyLines = [];
@@ -56,7 +59,7 @@ function extractReleaseNotes(text: string, version: string) {
 }
 
 /** Refreshes Keep a Changelog link references at the end of the file. */
-function updateCompareLinks(text: string, repositoryUrl: string) {
+export function updateCompareLinks(text: string, repositoryUrl: string) {
   const versions = extractReleasedVersions(text);
   const lines = removeCompareLinks(text).split('\n');
   trimTrailingEmptyLines(lines);
@@ -70,7 +73,7 @@ function updateCompareLinks(text: string, repositoryUrl: string) {
 }
 
 /** Extracts released version numbers from changelog headings. */
-function extractReleasedVersions(text: string) {
+export function extractReleasedVersions(text: string) {
   return text
     .split('\n')
     .map((line) => line.match(/^## \[(\d+\.\d+\.\d+)\] - \d{4}-\d{2}-\d{2}$/)?.[1])
@@ -78,14 +81,14 @@ function extractReleasedVersions(text: string) {
 }
 
 /** Removes the existing changelog link reference block. */
-function removeCompareLinks(text: string) {
+export function removeCompareLinks(text: string) {
   const lines = text.split('\n');
   const compareLinksStartIndex = lines.findIndex((line) => /^\[unreleased\]: /i.test(line));
   return compareLinksStartIndex === -1 ? text : lines.slice(0, compareLinksStartIndex).join('\n');
 }
 
 /** Builds link references for Unreleased and every released version. */
-function buildCompareLinks(versions: string[], repositoryUrl: string) {
+export function buildCompareLinks(versions: string[], repositoryUrl: string) {
   return [
     `[unreleased]: ${repositoryUrl}/compare/v${versions[0]}...HEAD`,
     ...versions.map((version, index) =>
@@ -95,7 +98,7 @@ function buildCompareLinks(versions: string[], repositoryUrl: string) {
 }
 
 /** Builds a tag or compare link reference for a released version. */
-function buildVersionCompareLink(
+export function buildVersionCompareLink(
   versions: string[],
   repositoryUrl: string,
   version: string,
@@ -109,7 +112,7 @@ function buildVersionCompareLink(
 }
 
 /** Removes blank lines from the end of a line array. */
-function trimTrailingEmptyLines(lines: string[]) {
+export function trimTrailingEmptyLines(lines: string[]) {
   while (lines.at(-1) === '') {
     lines.pop();
   }

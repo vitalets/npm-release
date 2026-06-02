@@ -3,7 +3,9 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": ["node"]
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
-  "include": ["scripts/**/*.mts"]
+  "include": ["scripts/**/*.mts", "test/**/*.mts"]
 }
