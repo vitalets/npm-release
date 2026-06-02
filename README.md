@@ -1,5 +1,7 @@
 # npm-release
 
+[![Test](https://github.com/vitalets/npm-release/actions/workflows/test.yml/badge.svg)](https://github.com/vitalets/npm-release/actions/workflows/test.yml)
+
 A GitHub composite action that performs a full npm package release:
 
 1. Bumps the version in `package.json` (`patch`, `minor`, or `major`)

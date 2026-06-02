@@ -4,6 +4,10 @@ description: >
   publishes to npm via OIDC trusted publishing (no token required), and
   creates a GitHub Release. Skips changelog and GitHub Release for pre-releases.
 
+branding:
+  icon: 'package'
+  color: 'green'
+
 inputs:
   release-version:
     description: Release version type (patch, minor, or major)
