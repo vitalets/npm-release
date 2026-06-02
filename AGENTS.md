@@ -112,3 +112,23 @@ node scripts/changelog.mts <version>
 ```
 
 Must be run from the **caller's repo root** (where `CHANGELOG.md` and `package.json` live).
+
+---
+
+## GitHub Marketplace & Versioning
+
+This action is published on the [GitHub Marketplace](https://github.com/marketplace/actions/npm-release).
+
+### Tag convention
+Two tags are maintained per release:
+- **Exact tag** (`v1.0.0`) — immutable, pinned to a specific release
+- **Floating tag** (`v1`) — always points to the latest `v1.x.x`; consumers using `@v1` get bug fixes automatically
+
+### How to publish a new release
+1. Update `CHANGELOG.md` — add entries under `## [Unreleased]`
+2. Run the action against itself (it bumps `package.json`, stamps the changelog, commits, tags, and creates a GitHub Release automatically)
+3. After the release, move the floating tag forward:
+   ```bash
+   git tag -f v1 && git push origin v1 --force
+   ```
+4. Create a new major floating tag (e.g. `v2`) only when introducing **breaking changes** to inputs or behavior.
