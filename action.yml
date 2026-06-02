@@ -1,8 +1,5 @@
 name: npm release
-description: >
-  Bumps the version, updates CHANGELOG.md, commits and tags the release,
-  publishes to npm via OIDC trusted publishing (no token required), and
-  creates a GitHub Release. Skips changelog and GitHub Release for pre-releases.
+description: 'All-in-one npm release: bump version, update changelog, publish via OIDC trusted publishing, and create GitHub Release.'
 
 branding:
   icon: 'package'
