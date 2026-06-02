@@ -1,0 +1,11 @@
+{
+  "name": "npm-release",
+  "version": "1.0.0",
+  "description": "GitHub composite action for full npm package releases via OIDC trusted publishing",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vitalets/npm-release.git"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,97 @@
+name: npm release
+description: >
+  Bumps the version, updates CHANGELOG.md, commits and tags the release,
+  publishes to npm via OIDC trusted publishing (no token required), and
+  creates a GitHub Release. Skips changelog and GitHub Release for pre-releases.
+
+inputs:
+  release-version:
+    description: Release version type (patch, minor, or major)
+    required: true
+  prerelease:
+    description: Pre-release (beta). Skips changelog update and GitHub Release.
+    required: false
+    default: 'false'
+  skip-npm-publish:
+    description: Skip npm publish step
+    required: false
+    default: 'false'
+  dry-run:
+    description: Dry run — no git push, no npm publish. Prints a summary instead.
+    required: false
+    default: 'false'
+  github-token:
+    description: GitHub token for git push and creating a GitHub Release (secrets.GITHUB_TOKEN)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure git
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Bump version
+      shell: bash
+      run: |
+        VERSION_ARG=${{ inputs.release-version }}
+        if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+          VERSION_ARG="pre${VERSION_ARG}"
+        fi
+        npm version $VERSION_ARG --no-git-tag-version --preid=beta
+        VERSION=$(npm pkg get version | tr -d '"')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    # Skipped for pre-releases: the [Unreleased] section keeps accumulating
+    # changes so that the next stable release includes the full changelog.
+    - name: Update changelog and extract release notes
+      if: ${{ inputs.prerelease != 'true' }}
+      shell: bash
+      run: |
+        NOTES=$(node --experimental-strip-types $GITHUB_ACTION_PATH/scripts/changelog.mts ${{ env.VERSION }})
+        echo "NOTES<<EOF" >> $GITHUB_ENV
+        echo "$NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Commit, tag, push
+      if: ${{ inputs.dry-run != 'true' }}
+      shell: bash
+      run: |
+        git add package.json package-lock.json CHANGELOG.md
+        git commit --no-verify -m "v${{ env.VERSION }}"
+        git tag "v${{ env.VERSION }}"
+        git push --no-verify origin HEAD --tags
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+
+    - name: Publish to npm
+      if: ${{ inputs.dry-run != 'true' && inputs.skip-npm-publish != 'true' }}
+      shell: bash
+      # --provenance attaches a signed build attestation via OIDC (requires id-token: write).
+      # --tag sets the dist-tag on the registry (e.g. npm install pkg@next).
+      # Stable releases use the default 'latest' tag automatically.
+      run: npm publish --provenance --access public${{ inputs.prerelease == 'true' && ' --tag next' || '' }}
+
+    # Skipped for pre-releases: GitHub Releases are only created for stable
+    # versions to keep the release list clean.
+    - name: Create GitHub Release
+      if: ${{ inputs.dry-run != 'true' && inputs.prerelease != 'true' }}
+      shell: bash
+      run: echo "$NOTES" | gh release create "v${{ env.VERSION }}" --title "v${{ env.VERSION }}" --notes-file -
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+
+    - name: Dry run summary
+      if: ${{ inputs.dry-run == 'true' }}
+      shell: bash
+      run: |
+        echo "=== Dry run - no changes pushed or published ==="
+        echo "Version: ${{ env.VERSION }}"
+        echo "--- Release notes ---"
+        echo "$NOTES"
+        echo "--- package.json version ---"
+        npm pkg get version
+        echo "--- Release files diff ---"
+        git diff package.json package-lock.json CHANGELOG.md
