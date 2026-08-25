@@ -60,13 +60,13 @@ branding:
 
 inputs:
   stable-release:
-    description: Stable release (keep 'none' if releasing beta)
+    description: Stable release (omit if releasing beta)
     required: false
-    default: 'none'
+    default: '-'
   beta-release:
-    description: Beta release (keep 'none' if releasing stable)
+    description: Beta release (omit if releasing stable)
     required: false
-    default: 'none'
+    default: '-'
   skip-npm-publish:
     description: Skip npm publish step
     required: false
@@ -100,7 +100,7 @@ runs:
         npm version "$VERSION_OPERATION" --no-git-tag-version --preid=beta
         VERSION=$(npm pkg get version | tr -d '"')
         echo "VERSION=$VERSION" >> $GITHUB_ENV
-        if [[ -z "$BETA_RELEASE" || "$BETA_RELEASE" == "none" ]]; then
+        if [[ -z "$BETA_RELEASE" || "$BETA_RELEASE" == "-" ]]; then
           echo "prerelease=false" >> $GITHUB_OUTPUT
         else
           echo "prerelease=true" >> $GITHUB_OUTPUT

@@ -9,7 +9,7 @@
  * the first whitespace-delimited token is treated as the canonical operation.
  *
  * Runtime usage (Node.js ≥ 24):
- *   node src/versioning.mts <current-version> <stable-release|none> <beta-release|none>
+ *   node src/versioning.mts <current-version> <stable-release|-> <beta-release|->
  */
 export type Release = 'patch' | 'minor' | 'major';
 export type BetaRelease = `beta-${Release}`;
@@ -25,7 +25,7 @@ function main(): void {
   const [currentVersion, stableRelease, betaRelease] = process.argv.slice(2);
 
   if (!currentVersion || stableRelease === undefined || betaRelease === undefined) {
-    console.error('Usage: versioning.mts <current-version> <stable-release|none> <beta-release|none>');
+    console.error('Usage: versioning.mts <current-version> <stable-release|-> <beta-release|->');
     process.exitCode = 1;
     return;
   }
@@ -84,7 +84,7 @@ export function npmVersionOperation(
 
 function operationFromChoice(choice: string): string | undefined {
   const normalized = choice.trim();
-  if (!normalized || normalized === 'none') return undefined;
+  if (!normalized || normalized === '-') return undefined;
 
   // The first token is the action's stable contract. Any remaining text is a
   // consumer-defined label shown in the workflow_dispatch dropdown.

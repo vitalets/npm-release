@@ -8,9 +8,9 @@ on:
         description: Stable release (omit if releasing beta)
         required: false
         type: choice
-        default: none
+        default: '-'
         options:
-          - none
+          - '-'
           - patch
           - minor
           - major
@@ -18,9 +18,9 @@ on:
         description: Beta release (omit if releasing stable)
         required: false
         type: choice
-        default: none
+        default: '-'
         options:
-          - none
+          - '-'
           - beta-patch (start or continue)
           - beta-minor (start or continue)
           - beta-major (start or continue)
@@ -58,7 +58,7 @@ jobs:
           github-token:     ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update floating major tag
-        if: ${{ inputs.dry-run == false && inputs.beta-release == 'none' }}
+        if: ${{ inputs.dry-run == false && inputs.beta-release == '-' }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
           MAJOR=${VERSION%%.*}

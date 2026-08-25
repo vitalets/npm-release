@@ -1,26 +1,26 @@
 # Copy-paste example for consumers publishing an npm package with this action.
-name: Publish to npm
+name: release
 
 on:
   workflow_dispatch:
     inputs:
       stable-release:
-        description: Stable release (keep 'none' if releasing beta)
+        description: Stable release (omit if releasing beta)
         required: false
         type: choice
-        default: none
+        default: '-'
         options:
-          - none
+          - '-'
           - patch
           - minor
           - major
       beta-release:
-        description: Beta release (keep 'none' if releasing stable)
+        description: Beta release (omit if releasing stable)
         required: false
         type: choice
-        default: none
+        default: '-'
         options:
-          - none
+          - '-'
           - beta-patch (start or continue)
           - beta-minor (start or continue)
           - beta-major (start or continue)

@@ -50,22 +50,22 @@ on:
   workflow_dispatch:
     inputs:
       stable-release:
-        description: Stable release (keep 'none' if releasing beta)
+        description: Stable release (omit if releasing beta)
         required: false
         type: choice
-        default: none
+        default: '-'
         options:
-          - none
+          - '-'
           - patch
           - minor
           - major
       beta-release:
-        description: Beta release (keep 'none' if releasing stable)
+        description: Beta release (omit if releasing stable)
         required: false
         type: choice
-        default: none
+        default: '-'
         options:
-          - none
+          - '-'
           - beta-patch (start or continue)
           - beta-minor (start or continue)
           - beta-major (start or continue)
@@ -127,7 +127,7 @@ On GitHub:
 
 ### Version transition examples
 
-Select exactly one operation across the two dropdowns. Leave the other dropdown as `none`. The action exits with a clear error if neither dropdown or both dropdowns are selected.
+Select exactly one operation across the two dropdowns. Leave the other dropdown as `-`. The action exits with a clear error if neither dropdown or both dropdowns are selected.
 
 - Stable `patch`, `minor`, and `major` follow npm's SemVer behavior. On a prerelease, an operation can remove the beta suffix without incrementing a numeric part.
 - `beta-patch`, `beta-minor`, and `beta-major` start the requested beta line at `beta.0`.
@@ -182,8 +182,8 @@ Select exactly one operation across the two dropdowns. Leave the other dropdown 
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `stable-release` | no | `none` | Stable release: `patch`, `minor`, or `major`. Select exactly one stable or beta release. |
-| `beta-release` | no | `none` | Beta release: `beta-patch`, `beta-minor`, or `beta-major`. Betas publish with npm tag `next` and skip changelog updates and GitHub Releases. |
+| `stable-release` | no | `-` | Stable release: `patch`, `minor`, or `major`. Select exactly one stable or beta release. |
+| `beta-release` | no | `-` | Beta release: `beta-patch`, `beta-minor`, or `beta-major`. Betas publish with npm tag `next` and skip changelog updates and GitHub Releases. |
 | `skip-npm-publish` | no | `false` | Skip the `npm publish` step |
 | `dry-run` | no | `false` | No git push, no npm publish — prints a summary of what would happen |
 | `github-token` | yes | — | Pass `secrets.GITHUB_TOKEN` — used for git push and creating the GitHub Release |

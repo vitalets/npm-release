@@ -66,8 +66,8 @@ describe('Version transition tables', () => {
     describe(versionTable.currentVersion, () => {
       for (const [action, expectedVersion] of versionTable.transitions) {
         const isBeta = action.startsWith('beta-');
-        const stableRelease = isBeta ? 'none' : action;
-        const betaRelease = isBeta ? action : 'none';
+        const stableRelease = isBeta ? '-' : action;
+        const betaRelease = isBeta ? action : '-';
 
         test(`${action} ${expectedVersion ? `produces ${expectedVersion}` : 'is prohibited'}`, () => {
           if (expectedVersion === null) {
@@ -98,7 +98,7 @@ describe('Beta suffixes', () => {
   test('increments an existing beta suffix and removes build metadata', () => {
     verifyPackageVersion(
       '1.2.3-beta.9+build.7',
-      'none',
+      '-',
       'beta-patch',
       '1.2.3-beta.10',
     );
@@ -107,13 +107,13 @@ describe('Beta suffixes', () => {
 
 describe('Workflow option labels', () => {
   test('accepts explanatory text after a stable operation', () => {
-    verifyPackageVersion('1.2.3', 'patch (stable release)', 'none', '1.2.4');
+    verifyPackageVersion('1.2.3', 'patch (stable release)', '-', '1.2.4');
   });
 
   test('accepts explanatory text after a beta operation', () => {
     verifyPackageVersion(
       '1.2.3-beta.0',
-      'none',
+      '-',
       'beta-patch (start or continue)',
       '1.2.3-beta.1',
     );
@@ -125,8 +125,8 @@ describe('Input validation', () => {
     {
       name: 'rejects no selected release',
       currentVersion: '1.2.3',
-      stableRelease: 'none',
-      betaRelease: 'none',
+      stableRelease: '-',
+      betaRelease: '-',
       error: 'Select either a stable release or a beta release',
     },
     {
@@ -140,13 +140,13 @@ describe('Input validation', () => {
       name: 'rejects an unknown stable operation',
       currentVersion: '1.2.3',
       stableRelease: 'promote-beta',
-      betaRelease: 'none',
+      betaRelease: '-',
       error: 'Unknown stable release operation: promote-beta',
     },
     {
       name: 'rejects an unknown beta operation',
       currentVersion: '1.2.3',
-      stableRelease: 'none',
+      stableRelease: '-',
       betaRelease: 'beta-suffix',
       error: 'Unknown beta release operation: beta-suffix',
     },

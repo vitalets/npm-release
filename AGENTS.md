@@ -10,7 +10,7 @@ A GitHub composite action that automates full npm package releases:
 4. Publish to npm via **OIDC trusted publishing** (no stored `NPM_TOKEN`)
 5. Create a GitHub Release with extracted changelog notes
 
-Beta releases (`beta-release` other than `none`) skip steps 2 and 5.
+Beta releases (`beta-release` other than `-`) skip steps 2 and 5.
 
 ---
 
@@ -81,8 +81,8 @@ permissions:
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `stable-release` | no | `none` | `patch`, `minor`, or `major` |
-| `beta-release` | no | `none` | `beta-patch`, `beta-minor`, or `beta-major` |
+| `stable-release` | no | `-` | `patch`, `minor`, or `major` |
+| `beta-release` | no | `-` | `beta-patch`, `beta-minor`, or `beta-major` |
 | `skip-npm-publish` | no | `false` | Skip `npm publish` step |
 | `dry-run` | no | `false` | No push, no publish — prints summary |
 | `github-token` | yes | — | `secrets.GITHUB_TOKEN` for git push and GitHub Release |
