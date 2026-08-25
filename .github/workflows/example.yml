@@ -1,5 +1,5 @@
 # Copy-paste example for consumers publishing an npm package with this action.
-name: release
+name: example release workflow
 
 on:
   workflow_dispatch:
