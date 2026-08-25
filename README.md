@@ -104,7 +104,7 @@ jobs:
       # - run: npm run build
       # - run: npm test
 
-      - uses: vitalets/npm-release@v1
+      - uses: vitalets/npm-release@v2
         with:
           stable-release:   ${{ inputs.stable-release }}
           beta-release:     ${{ inputs.beta-release }}
