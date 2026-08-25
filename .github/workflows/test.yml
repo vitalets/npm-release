@@ -1,11 +1,12 @@
-name: Test
+# Runs the unit test suite on every push.
+name: test
 
 on:
   push:
     branches: ['**']
 
 jobs:
-  unit:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -13,46 +14,4 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
-      - run: node --test test/**/*.mts
-
-  # Runs the action against itself using `uses: ./` to verify all steps execute
-  # correctly end-to-end in a real GitHub Actions environment.
-  # Safety layers against destructive side-effects:
-  #   - npm publish: "private": true in package.json is a hard block; skip-npm-publish
-  #     adds a second independent guard via its own `if:` condition in action.yml
-  #   - git push / GitHub Release: fake-token below is an additional guard — git push
-  #     and gh release create will fail authentication if dry-run ever stops working
-  integration:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - name: Capture version before release
-        run: echo "ORIGINAL_VERSION=$(npm pkg get version | tr -d '"')" >> $GITHUB_ENV
-
-      - uses: ./
-        with:
-          release-version: patch
-          dry-run: 'true'
-          skip-npm-publish: 'true'
-          # Intentionally fake — guards against accidental git push / GitHub Release
-          # if dry-run ever stops working. The real token is not needed for dry-run.
-          github-token: fake-token
-
-      - name: Verify dry-run results
-        run: |
-          VERSION=$(npm pkg get version | tr -d '"')
-          # version was bumped in package.json
-          [ "$VERSION" != "$ORIGINAL_VERSION" ] || (echo "ERROR: version was not bumped" && exit 1)
-          # CHANGELOG.md contains the new version heading
-          grep -q "## \[$VERSION\]" CHANGELOG.md || (echo "ERROR: version heading missing from CHANGELOG.md" && exit 1)
-          # no git commit was created (HEAD unchanged)
-          git diff --name-only HEAD | grep -q "package.json" || (echo "ERROR: package.json not in dirty working tree — bump may not have run" && exit 1)
-          echo "OK: version=$VERSION, changelog updated, no commit created"
+      - run: npm test

@@ -6,7 +6,7 @@ import {
   updateCompareLinks,
   extractReleasedVersions,
   removeCompareLinks,
-} from '../scripts/changelog.mts';
+} from '../src/changelog.mts';
 
 const REPO_URL = 'https://github.com/owner/repo';
 
@@ -87,4 +87,3 @@ test('updateCompareLinks uses a tag link when only one version exists', () => {
   assert.ok(result.includes('[unreleased]: https://github.com/owner/repo/compare/v1.0.0...HEAD'));
   assert.ok(result.includes('[1.0.0]: https://github.com/owner/repo/releases/tag/v1.0.0'));
 });
-

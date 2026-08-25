@@ -1,0 +1,66 @@
+# Releases this GitHub Action itself; npm publishing is always skipped.
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      stable-release:
+        description: Stable release (keep 'none' if releasing beta)
+        required: false
+        type: choice
+        default: none
+        options:
+          - none
+          - patch
+          - minor
+          - major
+      beta-release:
+        description: Beta release (keep 'none' if releasing stable)
+        required: false
+        type: choice
+        default: none
+        options:
+          - none
+          - beta-patch (start or continue)
+          - beta-minor (start or continue)
+          - beta-major (start or continue)
+      dry-run:
+        description: Dry run
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - run: npm ci
+      - run: npm test
+
+      - uses: ./
+        with:
+          stable-release:   ${{ inputs.stable-release }}
+          beta-release:     ${{ inputs.beta-release }}
+          skip-npm-publish: 'true'
+          dry-run:          ${{ inputs.dry-run }}
+          github-token:     ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update floating major tag
+        if: ${{ inputs.dry-run == false && inputs.beta-release == 'none' }}
+        run: |
+          VERSION=$(npm pkg get version | tr -d '"')
+          MAJOR=${VERSION%%.*}
+          git tag -f "v$MAJOR" "v$VERSION"
+          git push origin "v$MAJOR" --force

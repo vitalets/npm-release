@@ -4,7 +4,7 @@
 
 A GitHub composite action that performs a full npm package release:
 
-1. Bumps the version in `package.json` (`patch`, `minor`, or `major`)
+1. Applies an explicit stable or beta version operation to `package.json`
 2. Updates `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format
 3. Commits, tags, and pushes the release commit
 4. Publishes to npm via **OIDC trusted publishing** — no stored npm token required
@@ -47,20 +47,26 @@ name: Publish to npm
 on:
   workflow_dispatch:
     inputs:
-      release-version:
-        description: Release version type
-        required: true
+      stable-release:
+        description: Stable release (keep 'none' if releasing beta)
+        required: false
         type: choice
+        default: none
         options:
+          - none
           - patch
           - minor
           - major
-        default: patch
-      prerelease:
-        description: Pre-release (beta)
+      beta-release:
+        description: Beta release (keep 'none' if releasing stable)
         required: false
-        type: boolean
-        default: false
+        type: choice
+        default: none
+        options:
+          - none
+          - beta-patch (start or continue)
+          - beta-minor (start or continue)
+          - beta-major (start or continue)
       skip-npm-publish:
         description: Skip NPM publish
         required: false
@@ -98,19 +104,119 @@ jobs:
 
       - uses: vitalets/npm-release@v1
         with:
-          release-version: ${{ inputs.release-version }}
-          prerelease:       ${{ inputs.prerelease }}
+          stable-release:   ${{ inputs.stable-release }}
+          beta-release:     ${{ inputs.beta-release }}
           skip-npm-publish: ${{ inputs.skip-npm-publish }}
           dry-run:          ${{ inputs.dry-run }}
           github-token:     ${{ secrets.GITHUB_TOKEN }}
 ```
 
+### Version transition examples
+
+Select exactly one operation across the two dropdowns. Leave the other dropdown
+as `none`. The action exits with a clear error if neither dropdown or both
+dropdowns are selected.
+
+- Stable `patch`, `minor`, and `major` follow npm's SemVer behavior. On a
+  prerelease, an operation can remove the beta suffix without incrementing a
+  numeric part.
+- `beta-patch`, `beta-minor`, and `beta-major` start the requested beta line at
+  `beta.0`.
+- If the current version already belongs to the selected beta line, the
+  operation increments only `beta.N`.
+- While on a minor or major beta, lower stable and beta operations are rejected
+  because they would misrepresent or branch below the unreleased beta line.
+
+### Currently on stable version
+
+| Current version | Action | New version |
+|---|---|---|
+| `1.2.3` | `patch` | `1.2.4` |
+| `1.2.3` | `minor` | `1.3.0` |
+| `1.2.3` | `major` | `2.0.0` |
+| `1.2.3` | `beta-patch` | `1.2.4-beta.0` |
+| `1.2.3` | `beta-minor` | `1.3.0-beta.0` |
+| `1.2.3` | `beta-major` | `2.0.0-beta.0` |
+
+### Currently on beta patch
+
+| Current version | Action | New version |
+|---|---|---|
+| `1.2.3-beta.0` | `patch` | `1.2.3` |
+| `1.2.3-beta.0` | `minor` | `1.3.0` |
+| `1.2.3-beta.0` | `major` | `2.0.0` |
+| `1.2.3-beta.0` | `beta-patch` | `1.2.3-beta.1` |
+| `1.2.3-beta.0` | `beta-minor` | `1.3.0-beta.0` |
+| `1.2.3-beta.0` | `beta-major` | `2.0.0-beta.0` |
+
+### Currently on beta minor
+
+| Current version | Action | New version |
+|---|---|---|
+| `1.2.0-beta.0` | `patch` | Not permitted |
+| `1.2.0-beta.0` | `minor` | `1.2.0` |
+| `1.2.0-beta.0` | `major` | `2.0.0` |
+| `1.2.0-beta.0` | `beta-patch` | Not permitted |
+| `1.2.0-beta.0` | `beta-minor` | `1.2.0-beta.1` |
+| `1.2.0-beta.0` | `beta-major` | `2.0.0-beta.0` |
+
+### Currently on beta major
+
+| Current version | Action | New version |
+|---|---|---|
+| `1.0.0-beta.0` | `patch` | Not permitted |
+| `1.0.0-beta.0` | `minor` | Not permitted |
+| `1.0.0-beta.0` | `major` | `1.0.0` |
+| `1.0.0-beta.0` | `beta-patch` | Not permitted |
+| `1.0.0-beta.0` | `beta-minor` | Not permitted |
+| `1.0.0-beta.0` | `beta-major` | `1.0.0-beta.1` |
+
+The calling workflow owns the dropdown options because GitHub action metadata
+does not support choice lists. Each option must begin with one canonical action
+value from the table below. The action reads only that first token, so consumers
+can change or translate the explanatory text without changing action behavior:
+
+```text
+patch
+patch (any consumer-defined explanation)
+```
+
+Both values resolve to the canonical `patch` release. Unknown leading tokens
+fail with a clear validation error.
+
 ## Action Inputs
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `release-version` | yes | — | `patch`, `minor`, or `major` |
-| `prerelease` | no | `false` | Bump as pre-release (`--preid=beta`), publish with `--tag next`. Skips changelog update and GitHub Release. |
+| `stable-release` | no | `none` | Stable release: `patch`, `minor`, or `major`. Select exactly one stable or beta release. |
+| `beta-release` | no | `none` | Beta release: `beta-patch`, `beta-minor`, or `beta-major`. Betas publish with npm tag `next` and skip changelog updates and GitHub Releases. |
 | `skip-npm-publish` | no | `false` | Skip the `npm publish` step |
 | `dry-run` | no | `false` | No git push, no npm publish — prints a summary of what would happen |
 | `github-token` | yes | — | Pass `secrets.GITHUB_TOKEN` — used for git push and creating the GitHub Release |
+
+## Development
+
+Install dependencies and run the tests before submitting changes:
+
+```bash
+npm ci
+npm test
+```
+
+### Releasing the next version of this action
+
+1. Add the release notes under `## [Unreleased]` in `CHANGELOG.md`, commit the
+   changes, and push them to the release branch.
+2. Open the `release` workflow on the GitHub Actions page and click **Run
+   workflow** for the branch being released. It invokes the action with
+   `uses: ./` so the release uses the code from that branch.
+3. Select one stable or beta release and leave the other input as `none`.
+   Leave `dry-run` as `false`. The workflow always skips npm publishing because
+   this repository publishes a GitHub Action, not an npm package.
+4. For a stable release, the action updates `package.json` and `CHANGELOG.md`,
+   pushes the release commit and exact tag (for example, `v1.1.0`), and creates
+   the GitHub Release. Beta releases skip the changelog and GitHub Release.
+5. After a stable release, the workflow moves the floating major tag (for
+   example, `v1`) to the new exact tag so users of
+   `vitalets/npm-release@v1` receive the update. Beta and dry-run releases do
+   not update the floating tag.

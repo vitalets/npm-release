@@ -1,3 +1,56 @@
+# Stable operations use npm's SemVer behavior. A beta operation continues the
+# current beta suffix when the selected beta line matches; otherwise it starts
+# the selected beta line at beta.0. Operations lower than the current beta line
+# are not permitted.
+#
+# Currently on stable version
+# +-----------------+------------+------------------+
+# | Current version | Action     | New version      |
+# +-----------------+------------+------------------+
+# | 1.2.3           | patch      | 1.2.4            |
+# | 1.2.3           | minor      | 1.3.0            |
+# | 1.2.3           | major      | 2.0.0            |
+# | 1.2.3           | beta-patch | 1.2.4-beta.0     |
+# | 1.2.3           | beta-minor | 1.3.0-beta.0     |
+# | 1.2.3           | beta-major | 2.0.0-beta.0     |
+# +-----------------+------------+------------------+
+#
+# Currently on beta patch
+# +-----------------+------------+------------------+
+# | Current version | Action     | New version      |
+# +-----------------+------------+------------------+
+# | 1.2.3-beta.0    | patch      | 1.2.3            |
+# | 1.2.3-beta.0    | minor      | 1.3.0            |
+# | 1.2.3-beta.0    | major      | 2.0.0            |
+# | 1.2.3-beta.0    | beta-patch | 1.2.3-beta.1     |
+# | 1.2.3-beta.0    | beta-minor | 1.3.0-beta.0     |
+# | 1.2.3-beta.0    | beta-major | 2.0.0-beta.0     |
+# +-----------------+------------+------------------+
+#
+# Currently on beta minor
+# +-----------------+------------+------------------+
+# | Current version | Action     | New version      |
+# +-----------------+------------+------------------+
+# | 1.2.0-beta.0    | patch      | Not permitted     |
+# | 1.2.0-beta.0    | minor      | 1.2.0            |
+# | 1.2.0-beta.0    | major      | 2.0.0            |
+# | 1.2.0-beta.0    | beta-patch | Not permitted     |
+# | 1.2.0-beta.0    | beta-minor | 1.2.0-beta.1     |
+# | 1.2.0-beta.0    | beta-major | 2.0.0-beta.0     |
+# +-----------------+------------+------------------+
+#
+# Currently on beta major
+# +-----------------+------------+------------------+
+# | Current version | Action     | New version      |
+# +-----------------+------------+------------------+
+# | 1.0.0-beta.0    | patch      | Not permitted     |
+# | 1.0.0-beta.0    | minor      | Not permitted     |
+# | 1.0.0-beta.0    | major      | 1.0.0            |
+# | 1.0.0-beta.0    | beta-patch | Not permitted     |
+# | 1.0.0-beta.0    | beta-minor | Not permitted     |
+# | 1.0.0-beta.0    | beta-major | 1.0.0-beta.1     |
+# +-----------------+------------+------------------+
+
 name: npm release
 description: 'All-in-one npm release: bump version, update changelog, publish via OIDC trusted publishing, and create GitHub Release.'
 
@@ -6,13 +59,14 @@ branding:
   color: 'green'
 
 inputs:
-  release-version:
-    description: Release version type (patch, minor, or major)
-    required: true
-  prerelease:
-    description: Pre-release (beta). Skips changelog update and GitHub Release.
+  stable-release:
+    description: Stable release (keep 'none' if releasing beta)
     required: false
-    default: 'false'
+    default: 'none'
+  beta-release:
+    description: Beta release (keep 'none' if releasing stable)
+    required: false
+    default: 'none'
   skip-npm-publish:
     description: Skip npm publish step
     required: false
@@ -35,23 +89,30 @@ runs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
     - name: Bump version
+      id: bump-version
       shell: bash
+      env:
+        STABLE_RELEASE: ${{ inputs.stable-release }}
+        BETA_RELEASE: ${{ inputs.beta-release }}
       run: |
-        VERSION_ARG=${{ inputs.release-version }}
-        if [[ "${{ inputs.prerelease }}" == "true" ]]; then
-          VERSION_ARG="pre${VERSION_ARG}"
-        fi
-        npm version $VERSION_ARG --no-git-tag-version --preid=beta
+        CURRENT_VERSION=$(npm pkg get version | tr -d '"')
+        VERSION_OPERATION=$(node "$GITHUB_ACTION_PATH/src/versioning.mts" "$CURRENT_VERSION" "$STABLE_RELEASE" "$BETA_RELEASE")
+        npm version "$VERSION_OPERATION" --no-git-tag-version --preid=beta
         VERSION=$(npm pkg get version | tr -d '"')
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+        if [[ -z "$BETA_RELEASE" || "$BETA_RELEASE" == "none" ]]; then
+          echo "prerelease=false" >> $GITHUB_OUTPUT
+        else
+          echo "prerelease=true" >> $GITHUB_OUTPUT
+        fi
 
     # Skipped for pre-releases: the [Unreleased] section keeps accumulating
     # changes so that the next stable release includes the full changelog.
     - name: Update changelog and extract release notes
-      if: ${{ inputs.prerelease != 'true' }}
+      if: ${{ steps.bump-version.outputs.prerelease != 'true' }}
       shell: bash
       run: |
-        NOTES=$(node $GITHUB_ACTION_PATH/scripts/changelog.mts ${{ env.VERSION }})
+        NOTES=$(node "$GITHUB_ACTION_PATH/src/changelog.mts" "${{ env.VERSION }}")
         echo "NOTES<<EOF" >> $GITHUB_ENV
         echo "$NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
@@ -73,12 +134,12 @@ runs:
       # --provenance attaches a signed build attestation via OIDC (requires id-token: write).
       # --tag sets the dist-tag on the registry (e.g. npm install pkg@next).
       # Stable releases use the default 'latest' tag automatically.
-      run: npm publish --provenance --access public${{ inputs.prerelease == 'true' && ' --tag next' || '' }}
+      run: npm publish --provenance --access public${{ steps.bump-version.outputs.prerelease == 'true' && ' --tag next' || '' }}
 
     # Skipped for pre-releases: GitHub Releases are only created for stable
     # versions to keep the release list clean.
     - name: Create GitHub Release
-      if: ${{ inputs.dry-run != 'true' && inputs.prerelease != 'true' }}
+      if: ${{ inputs.dry-run != 'true' && steps.bump-version.outputs.prerelease != 'true' }}
       shell: bash
       run: echo "$NOTES" | gh release create "v${{ env.VERSION }}" --title "v${{ env.VERSION }}" --notes-file -
       env:

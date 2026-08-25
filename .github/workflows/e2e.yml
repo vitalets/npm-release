@@ -1,0 +1,45 @@
+# Runs this action against itself in dry-run mode to verify the full release flow.
+name: e2e
+
+on:
+  push:
+    branches: ['**']
+
+jobs:
+  # Safety layers against destructive side-effects:
+  #   - npm publishing is disabled by both package.json and skip-npm-publish
+  #   - a fake token prevents pushes and GitHub Releases if dry-run stops working
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      - name: Capture version before release
+        run: echo "ORIGINAL_VERSION=$(npm pkg get version | tr -d '"')" >> $GITHUB_ENV
+
+      - uses: ./
+        with:
+          stable-release: patch
+          dry-run: 'true'
+          skip-npm-publish: 'true'
+          # Intentionally fake — guards against accidental git push / GitHub Release
+          # if dry-run ever stops working. The real token is not needed for dry-run.
+          github-token: fake-token
+
+      - name: Verify dry-run results
+        run: |
+          VERSION=$(npm pkg get version | tr -d '"')
+          # version was bumped in package.json
+          [ "$VERSION" != "$ORIGINAL_VERSION" ] || (echo "ERROR: version was not bumped" && exit 1)
+          # CHANGELOG.md contains the new version heading
+          grep -q "## \[$VERSION\]" CHANGELOG.md || (echo "ERROR: version heading missing from CHANGELOG.md" && exit 1)
+          # no git commit was created (HEAD unchanged)
+          git diff --name-only HEAD | grep -q "package.json" || (echo "ERROR: package.json not in dirty working tree — bump may not have run" && exit 1)
+          echo "OK: version=$VERSION, changelog updated, no commit created"
