@@ -34,8 +34,6 @@ Your repository must have a `CHANGELOG.md` following [Keep a Changelog](https://
 
 - New feature 1
 - New feature 2
-
-## [1.2.0] - 2026-05-01
 ...
 ```
 
@@ -178,17 +176,12 @@ Select exactly one operation across the two dropdowns. Leave the other dropdown 
 
 ## Development
 
-Install dependencies and run the tests before submitting changes:
+See [DEVELOPMENT.md](DEVELOPMENT.md).
 
-```bash
-npm ci
-npm test
-```
+## Changelog
 
-### Releasing the next version of this action
+See [CHANGELOG.md](CHANGELOG.md).
 
-1. Add the release notes under `## [Unreleased]` in `CHANGELOG.md`, commit the changes, and push them to the release branch.
-2. Open the `release` workflow on the GitHub Actions page and click **Run workflow** for the branch being released. It invokes the action with `uses: ./` so the release uses the code from that branch.
-3. Select one stable or beta release and leave the other input as `none`. Leave `dry-run` as `false`. The workflow always skips npm publishing because this repository publishes a GitHub Action, not an npm package.
-4. For a stable release, the action updates `package.json` and `CHANGELOG.md`, pushes the release commit and exact tag (for example, `v1.1.0`), and creates the GitHub Release. Beta releases skip the changelog and GitHub Release.
-5. After a stable release, the workflow moves the floating major tag (for example, `v1`) to the new exact tag so users of `vitalets/npm-release@v1` receive the update. Beta and dry-run releases do not update the floating tag.
+## License
+
+[MIT](https://github.com/vitalets/npm-release/blob/main/LICENSE)

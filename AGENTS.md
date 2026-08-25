@@ -14,12 +14,6 @@ Beta releases (`beta-release` other than `none`) skip steps 2 and 5.
 
 ---
 
-## Markdown Style
-
-When creating or editing Markdown files, keep prose paragraphs on a single line and use exactly one blank line between block elements (headings, paragraphs, lists, tables, and code fences). Do not add consecutive blank lines or hard-wrap prose.
-
----
-
 ## Files
 
 | File | Purpose |
