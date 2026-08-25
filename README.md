@@ -21,7 +21,7 @@ This action publishes to npm using [OIDC Trusted Publishing](https://docs.npmjs.
    - **Publisher**: GitHub Actions
    - **Repository owner**: your GitHub username or org
    - **Repository name**: your repository
-   - **Workflow filename**: the workflow file that calls this action (e.g. `publish.yml`)
+   - **Workflow filename**: the workflow file that calls this action (e.g. `release.yml`)
 
 ### 2. Add CHANGELOG.md
 
@@ -39,10 +39,12 @@ Your repository must have a `CHANGELOG.md` following [Keep a Changelog](https://
 
 ## Usage
 
-Full copy-paste workflow template:
+### 1. Setup release workflow
+
+Copy-paste the following workflow to `.github/workflows/release.yml`:
 
 ```yaml
-name: Publish to npm
+name: release
 
 on:
   workflow_dispatch:
@@ -110,6 +112,18 @@ jobs:
           dry-run:          ${{ inputs.dry-run }}
           github-token:     ${{ secrets.GITHUB_TOKEN }}
 ```
+
+Adjust you project spesific pre-release checks (linting, tests).
+
+### 2. Run the workflow
+
+On GitHub:
+
+- go to **Actions**
+- select **release** in teh left panel 
+- click **Run workflow** button
+- select Stable or Beta release
+- click **Run workflow** at the bottom
 
 ### Version transition examples
 

@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       stable-release:
-        description: Stable release (keep 'none' if releasing beta)
+        description: Stable release (omit if releasing beta)
         required: false
         type: choice
         default: none
@@ -15,7 +15,7 @@ on:
           - minor
           - major
       beta-release:
-        description: Beta release (keep 'none' if releasing stable)
+        description: Beta release (omit if releasing stable)
         required: false
         type: choice
         default: none
