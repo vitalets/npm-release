@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-25
+
 ### Changed
 
 - Use separate stable and beta release dropdowns with npm-compatible version transitions
@@ -25,5 +27,6 @@ All notable changes to this project will be documented in this file.
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/vitalets/npm-release/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/vitalets/npm-release/releases/tag/v1.0.0
