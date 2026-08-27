@@ -127,7 +127,7 @@ See [Version transitions](transitions.md) for the complete release behavior refe
 
 ### Pre-release
 
-Setting any non-`stable` channel (e.g. `next`, `alpha`, `beta`, `rc`, etc) creates a prerelease version such as `1.2.3-next.0` and publishes it with the correspoinding npm dist-tag. Consumers can install that release explicitly, for example:
+Selecting any non-`stable` channel (e.g. `next`, `alpha`, `beta`, `rc`, etc) creates a prerelease version such as `1.2.3-next.0` and publishes it with the correspoinding npm dist-tag. Consumers can install that release explicitly, for example:
 
 ```sh
 npm install package-name@next
