@@ -4,26 +4,24 @@ name: release
 on:
   workflow_dispatch:
     inputs:
-      stable-release:
-        description: Stable release (omit if releasing beta)
-        required: false
+      channel:
+        description: Channel
+        required: true
         type: choice
         default: '-'
         options:
           - '-'
+          - stable
+          - beta
+      version:
+        description: Version
+        required: true
+        type: choice
+        default: patch
+        options:
           - patch
           - minor
           - major
-      beta-release:
-        description: Beta release (omit if releasing stable)
-        required: false
-        type: choice
-        default: '-'
-        options:
-          - '-'
-          - beta-patch (start or continue)
-          - beta-minor (start or continue)
-          - beta-major (start or continue)
       dry-run:
         description: Dry run
         required: false
@@ -51,14 +49,14 @@ jobs:
 
       - uses: ./
         with:
-          stable-release:   ${{ inputs.stable-release }}
-          beta-release:     ${{ inputs.beta-release }}
+          channel:          ${{ inputs.channel }}
+          version:          ${{ inputs.version }}
           skip-npm-publish: 'true'
           dry-run:          ${{ inputs.dry-run }}
           github-token:     ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update floating major tag
-        if: ${{ inputs.dry-run == false && inputs.beta-release == '-' }}
+        if: ${{ inputs.dry-run == false && inputs.channel == 'stable' }}
         run: |
           VERSION=$(npm pkg get version | tr -d '"')
           MAJOR=${VERSION%%.*}

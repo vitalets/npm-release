@@ -26,7 +26,8 @@ jobs:
 
       - uses: ./
         with:
-          stable-release: patch
+          channel: stable
+          version: patch
           dry-run: 'true'
           skip-npm-publish: 'true'
           # Intentionally fake — guards against accidental git push / GitHub Release

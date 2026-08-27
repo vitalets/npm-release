@@ -4,7 +4,7 @@
 
 A GitHub composite action that performs a full npm package release:
 
-1. Applies an explicit stable or beta version operation to `package.json`
+1. Applies an explicit release channel and version increment to `package.json`
 2. Updates `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format
 3. Commits, tags, and pushes the release commit
 4. Publishes to npm via **OIDC trusted publishing** — no stored npm token required
@@ -49,26 +49,24 @@ name: release
 on:
   workflow_dispatch:
     inputs:
-      stable-release:
-        description: Stable release (omit if releasing beta)
-        required: false
+      channel:
+        description: Channel
+        required: true
         type: choice
         default: '-'
         options:
           - '-'
+          - stable
+          - beta
+      version:
+        description: Version
+        required: true
+        type: choice
+        default: patch
+        options:
           - patch
           - minor
           - major
-      beta-release:
-        description: Beta release (omit if releasing stable)
-        required: false
-        type: choice
-        default: '-'
-        options:
-          - '-'
-          - beta-patch (start or continue)
-          - beta-minor (start or continue)
-          - beta-major (start or continue)
       skip-npm-publish:
         description: Skip NPM publish
         required: false
@@ -106,8 +104,8 @@ jobs:
 
       - uses: vitalets/npm-release@v2
         with:
-          stable-release:   ${{ inputs.stable-release }}
-          beta-release:     ${{ inputs.beta-release }}
+          channel:          ${{ inputs.channel }}
+          version:          ${{ inputs.version }}
           skip-npm-publish: ${{ inputs.skip-npm-publish }}
           dry-run:          ${{ inputs.dry-run }}
           github-token:     ${{ secrets.GITHUB_TOKEN }}
@@ -122,68 +120,17 @@ On GitHub:
 - go to **Actions**
 - select **release** in teh left panel 
 - click **Run workflow** button
-- select Stable or Beta release
+- select a Channel and Version
 - click **Run workflow** at the bottom
 
-### Version transition examples
-
-Select exactly one operation across the two dropdowns. Leave the other dropdown as `-`. The action exits with a clear error if neither dropdown or both dropdowns are selected.
-
-- Stable `patch`, `minor`, and `major` follow npm's SemVer behavior. On a prerelease, an operation can remove the beta suffix without incrementing a numeric part.
-- `beta-patch`, `beta-minor`, and `beta-major` start the requested beta line at `beta.0`.
-- If the current version already belongs to the selected beta line, the operation increments only `beta.N`.
-- While on a minor or major beta, lower stable and beta operations are rejected because they would misrepresent or branch below the unreleased beta line.
-
-### Currently on stable version
-
-| Current version | Action | New version |
-|---|---|---|
-| `1.2.3` | `patch` | `1.2.4` |
-| `1.2.3` | `minor` | `1.3.0` |
-| `1.2.3` | `major` | `2.0.0` |
-| `1.2.3` | `beta-patch` | `1.2.4-beta.0` |
-| `1.2.3` | `beta-minor` | `1.3.0-beta.0` |
-| `1.2.3` | `beta-major` | `2.0.0-beta.0` |
-
-### Currently on beta patch
-
-| Current version | Action | New version |
-|---|---|---|
-| `1.2.3-beta.0` | `patch` | `1.2.3` |
-| `1.2.3-beta.0` | `minor` | `1.3.0` |
-| `1.2.3-beta.0` | `major` | `2.0.0` |
-| `1.2.3-beta.0` | `beta-patch` | `1.2.3-beta.1` |
-| `1.2.3-beta.0` | `beta-minor` | `1.3.0-beta.0` |
-| `1.2.3-beta.0` | `beta-major` | `2.0.0-beta.0` |
-
-### Currently on beta minor
-
-| Current version | Action | New version |
-|---|---|---|
-| `1.2.0-beta.0` | `patch` | Not permitted |
-| `1.2.0-beta.0` | `minor` | `1.2.0` |
-| `1.2.0-beta.0` | `major` | `2.0.0` |
-| `1.2.0-beta.0` | `beta-patch` | Not permitted |
-| `1.2.0-beta.0` | `beta-minor` | `1.2.0-beta.1` |
-| `1.2.0-beta.0` | `beta-major` | `2.0.0-beta.0` |
-
-### Currently on beta major
-
-| Current version | Action | New version |
-|---|---|---|
-| `1.0.0-beta.0` | `patch` | Not permitted |
-| `1.0.0-beta.0` | `minor` | Not permitted |
-| `1.0.0-beta.0` | `major` | `1.0.0` |
-| `1.0.0-beta.0` | `beta-patch` | Not permitted |
-| `1.0.0-beta.0` | `beta-minor` | Not permitted |
-| `1.0.0-beta.0` | `beta-major` | `1.0.0-beta.1` |
+See [Version transitions](transitions.md) for the complete release behavior reference.
 
 ## Action Inputs
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `stable-release` | no | `-` | Stable release: `patch`, `minor`, or `major`. Select exactly one stable or beta release. |
-| `beta-release` | no | `-` | Beta release: `beta-patch`, `beta-minor`, or `beta-major`. Betas publish with npm tag `next` and skip changelog updates and GitHub Releases. |
+| `channel` | yes | — | `stable` for a stable release, or an npm prerelease identifier and dist-tag such as `alpha` or `beta`. |
+| `version` | yes | — | Version increment: `patch`, `minor`, or `major`. |
 | `skip-npm-publish` | no | `false` | Skip the `npm publish` step |
 | `dry-run` | no | `false` | No git push, no npm publish — prints a summary of what would happen |
 | `github-token` | yes | — | Pass `secrets.GITHUB_TOKEN` — used for git push and creating the GitHub Release |

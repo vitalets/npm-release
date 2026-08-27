@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Replace separate stable and beta release inputs with required Channel and Version inputs
+- Publish prereleases under the npm dist-tag matching their channel and support custom prerelease channels
+
 ## [2.0.0] - 2026-08-25
 
 ### Changed
