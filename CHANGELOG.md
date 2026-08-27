@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-27
+
 ### Changed
 
 - Replace separate stable and beta release inputs with required Channel and Version inputs
@@ -32,6 +34,7 @@ All notable changes to this project will be documented in this file.
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.0.0...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/vitalets/npm-release/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/vitalets/npm-release/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/vitalets/npm-release/releases/tag/v1.0.0
