@@ -4,30 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [2.1.0] - 2026-08-27
+- Use `next` as the prerelease channel in workflow examples, documentation, and tests
+- Document that prereleases published to the `next` dist-tag are installable as `package-name@next`
 
-### Changed
+## [2.1.0] - 2026-08-27
 
 - Replace separate stable and beta release inputs with required Channel and Version inputs
 - Publish prereleases under the npm dist-tag matching their channel and support custom prerelease channels
 
 ## [2.0.0] - 2026-08-25
 
-### Changed
-
 - Use separate stable and beta release dropdowns with npm-compatible version transitions
 - Let `beta-patch`, `beta-minor`, and `beta-major` start or continue their matching beta line
 - Run dependency-free TypeScript sources directly without a build step
 - Add a self-release workflow that always skips npm publishing
-
-### Fixed
-
 - Increment the beta suffix when the selected beta operation matches the current beta line
 - Reject lower release operations while on a minor or major beta line
 
 ## [1.0.0] - 2026-06-02
-
-### Added
 
 - Initial release of npm-release composite action
 - OIDC trusted publishing support

@@ -57,7 +57,7 @@ on:
         options:
           - '-'
           - stable
-          - beta
+          - next
       version:
         description: Version
         required: true
@@ -125,11 +125,19 @@ On GitHub:
 
 See [Version transitions](transitions.md) for the complete release behavior reference.
 
+### Pre-release
+
+Setting any non-`stable` channel (e.g. `next`, `alpha`, `beta`, `rc`, etc) creates a prerelease version such as `1.2.3-next.0` and publishes it with the correspoinding npm dist-tag. Consumers can install that release explicitly, for example:
+
+```sh
+npm install package-name@next
+```
+
 ## Action Inputs
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `channel` | yes | — | `stable` for a stable release, or an npm prerelease identifier and dist-tag such as `alpha` or `beta`. |
+| `channel` | yes | — | `stable` for a stable release, or an npm prerelease identifier and matching dist-tag such as `next`. |
 | `version` | yes | — | Version increment: `patch`, `minor`, or `major`. |
 | `skip-npm-publish` | no | `false` | Skip the `npm publish` step |
 | `dry-run` | no | `false` | No git push, no npm publish — prints a summary of what would happen |

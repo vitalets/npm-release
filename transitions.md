@@ -3,7 +3,7 @@
 Select a Channel explicitly; the action rejects the `-` placeholder. Version defaults to `patch` in the workflow UI.
 
 - Channel `stable` follows npm's stable SemVer behavior and publishes with the default `latest` tag.
-- Any other channel is used as both the SemVer prerelease identifier and npm dist-tag. Consumers can add options such as `alpha`, `beta`, `rc`, or `canary` to their workflow.
+- Any other channel is used as both the SemVer prerelease identifier and npm dist-tag. The examples use the conventional npm `next` tag; consumers can add other options such as `alpha`, `rc`, or `canary` to their workflow.
 - A prerelease starts the requested version line at `<channel>.0`. Selecting the same channel and line increments `<channel>.N`.
 - Switching channels on the same line resets the suffix to the requested `<channel>.0`.
 - While on a `minor` or `major` prerelease, lower operations are rejected because they would branch below the unreleased line.
@@ -14,68 +14,68 @@ Select a Channel explicitly; the action rejects the `-` placeholder. Version def
 - `1.2.3` + (stable, minor) → `1.3.0`
 - `1.2.3` + (stable, major) → `2.0.0`
 
-## stable → beta
+## stable → next
 
-- `1.2.3` + (beta, patch) → `1.2.4-beta.0`
-- `1.2.3` + (beta, minor) → `1.3.0-beta.0`
-- `1.2.3` + (beta, major) → `2.0.0-beta.0`
+- `1.2.3` + (next, patch) → `1.2.4-next.0`
+- `1.2.3` + (next, minor) → `1.3.0-next.0`
+- `1.2.3` + (next, major) → `2.0.0-next.0`
 
-## beta → stable
+## next → stable
 
-### beta patch → stable
+### next patch → stable
 
-- `1.2.3-beta.0` + (stable, patch) → `1.2.3`
-- `1.2.3-beta.0` + (stable, minor) → `1.3.0`
-- `1.2.3-beta.0` + (stable, major) → `2.0.0`
+- `1.2.3-next.0` + (stable, patch) → `1.2.3`
+- `1.2.3-next.0` + (stable, minor) → `1.3.0`
+- `1.2.3-next.0` + (stable, major) → `2.0.0`
 
-### beta minor → stable
+### next minor → stable
 
-- `1.2.0-beta.0` + (stable, patch) → **Not permitted**
-- `1.2.0-beta.0` + (stable, minor) → `1.2.0`
-- `1.2.0-beta.0` + (stable, major) → `2.0.0`
+- `1.2.0-next.0` + (stable, patch) → **Not permitted**
+- `1.2.0-next.0` + (stable, minor) → `1.2.0`
+- `1.2.0-next.0` + (stable, major) → `2.0.0`
 
-### beta major → stable
+### next major → stable
 
-- `1.0.0-beta.0` + (stable, patch) → **Not permitted**
-- `1.0.0-beta.0` + (stable, minor) → **Not permitted**
-- `1.0.0-beta.0` + (stable, major) → `1.0.0`
+- `1.0.0-next.0` + (stable, patch) → **Not permitted**
+- `1.0.0-next.0` + (stable, minor) → **Not permitted**
+- `1.0.0-next.0` + (stable, major) → `1.0.0`
 
-## beta → beta
+## next → next
 
-### beta patch → beta
+### next patch → next
 
-- `1.2.3-beta.0` + (beta, patch) → `1.2.3-beta.1`
-- `1.2.3-beta.0` + (beta, minor) → `1.3.0-beta.0`
-- `1.2.3-beta.0` + (beta, major) → `2.0.0-beta.0`
+- `1.2.3-next.0` + (next, patch) → `1.2.3-next.1`
+- `1.2.3-next.0` + (next, minor) → `1.3.0-next.0`
+- `1.2.3-next.0` + (next, major) → `2.0.0-next.0`
 
-### beta minor → beta
+### next minor → next
 
-- `1.2.0-beta.0` + (beta, patch) → **Not permitted**
-- `1.2.0-beta.0` + (beta, minor) → `1.2.0-beta.1`
-- `1.2.0-beta.0` + (beta, major) → `2.0.0-beta.0`
+- `1.2.0-next.0` + (next, patch) → **Not permitted**
+- `1.2.0-next.0` + (next, minor) → `1.2.0-next.1`
+- `1.2.0-next.0` + (next, major) → `2.0.0-next.0`
 
-### beta major → beta
+### next major → next
 
-- `1.0.0-beta.0` + (beta, patch) → **Not permitted**
-- `1.0.0-beta.0` + (beta, minor) → **Not permitted**
-- `1.0.0-beta.0` + (beta, major) → `1.0.0-beta.1`
+- `1.0.0-next.0` + (next, patch) → **Not permitted**
+- `1.0.0-next.0` + (next, minor) → **Not permitted**
+- `1.0.0-next.0` + (next, major) → `1.0.0-next.1`
 
-## alpha → beta
+## alpha → next
 
-### alpha patch → beta
+### alpha patch → next
 
-- `1.2.3-alpha.4` + (beta, patch) → `1.2.3-beta.0`
-- `1.2.3-alpha.4` + (beta, minor) → `1.3.0-beta.0`
-- `1.2.3-alpha.4` + (beta, major) → `2.0.0-beta.0`
+- `1.2.3-alpha.4` + (next, patch) → `1.2.3-next.0`
+- `1.2.3-alpha.4` + (next, minor) → `1.3.0-next.0`
+- `1.2.3-alpha.4` + (next, major) → `2.0.0-next.0`
 
-### alpha minor → beta
+### alpha minor → next
 
-- `1.2.0-alpha.4` + (beta, patch) → **Not permitted**
-- `1.2.0-alpha.4` + (beta, minor) → `1.2.0-beta.0`
-- `1.2.0-alpha.4` + (beta, major) → `2.0.0-beta.0`
+- `1.2.0-alpha.4` + (next, patch) → **Not permitted**
+- `1.2.0-alpha.4` + (next, minor) → `1.2.0-next.0`
+- `1.2.0-alpha.4` + (next, major) → `2.0.0-next.0`
 
-### alpha major → beta
+### alpha major → next
 
-- `1.0.0-alpha.4` + (beta, patch) → **Not permitted**
-- `1.0.0-alpha.4` + (beta, minor) → **Not permitted**
-- `1.0.0-alpha.4` + (beta, major) → `1.0.0-beta.0`
+- `1.0.0-alpha.4` + (next, patch) → **Not permitted**
+- `1.0.0-alpha.4` + (next, minor) → **Not permitted**
+- `1.0.0-alpha.4` + (next, major) → `1.0.0-next.0`

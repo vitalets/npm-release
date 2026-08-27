@@ -12,7 +12,7 @@ on:
         options:
           - '-'
           - stable
-          - beta
+          - next
       version:
         description: Version
         required: true

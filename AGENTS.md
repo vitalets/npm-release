@@ -19,3 +19,4 @@ Consumers prepare Node and npm authentication before invoking the action. The ac
 
 - Runtime scripts must remain dependency-free and use only Node.js built-ins. Consumers do not install this repository's development dependencies.
 - Scripts run directly from their TypeScript source with Node.js 24 or newer. Do not introduce a required build or bundled runtime artifact.
+- Record new changes only in the `[Unreleased]` section of `CHANGELOG.md`. Never modify an existing released version's changelog entries unless the user explicitly asks for it.
