@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-04
+
 - Derive changelog links from the GitHub Actions repository environment instead of `package.json`
 
 ## [2.1.1] - 2026-08-27
@@ -32,7 +34,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.1.1...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/vitalets/npm-release/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/vitalets/npm-release/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/vitalets/npm-release/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/vitalets/npm-release/compare/v1.0.0...v2.0.0
