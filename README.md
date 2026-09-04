@@ -30,6 +30,8 @@ Your repository must have a `CHANGELOG.md` following [Keep a Changelog](https://
 ```markdown
 # Changelog
 
+> This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+
 ## [Unreleased]
 
 - New feature 1
