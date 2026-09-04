@@ -11,7 +11,6 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const CHANGELOG_PATH = 'CHANGELOG.md';
-const PACKAGE_JSON_PATH = 'package.json';
 const logger = console;
 
 const version = process.argv[2];
@@ -118,23 +117,13 @@ export function trimTrailingEmptyLines(lines: string[]) {
   }
 }
 
-/** Reads and normalizes the GitHub repository URL from package.json. */
-function getRepositoryUrl() {
-  const packageJson = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8')) as {
-    repository?: { url?: string } | string;
-  };
-  const repository =
-    typeof packageJson.repository === 'string'
-      ? packageJson.repository
-      : packageJson.repository?.url;
-  const normalized = repository
-    ?.replace(/^git\+/, '')
-    .replace(/\.git$/, '')
-    .replace(/\/$/, '');
-  const match = normalized?.match(/github\.com[:/](.+)$/);
-  if (!match) {
-    logger.error('Could not determine GitHub repository URL from package.json');
+/** Builds the current repository URL from GitHub Actions environment variables. */
+export function getRepositoryUrl(env: NodeJS.ProcessEnv = process.env) {
+  const serverUrl = env.GITHUB_SERVER_URL?.replace(/\/+$/, '');
+  const repository = env.GITHUB_REPOSITORY?.replace(/^\/+|\/+$/g, '');
+  if (!serverUrl || !repository) {
+    logger.error('Could not determine repository URL from GitHub Actions environment');
     process.exit(1);
   }
-  return `https://github.com/${match[1]}`;
+  return `${serverUrl}/${repository}`;
 }

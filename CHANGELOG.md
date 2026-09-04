@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Derive changelog links from the GitHub Actions repository environment instead of `package.json`
+
 ## [2.1.1] - 2026-08-27
 
 - Use `next` as the prerelease channel in workflow examples, documentation, and tests

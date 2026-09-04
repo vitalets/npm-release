@@ -6,9 +6,30 @@ import {
   updateCompareLinks,
   extractReleasedVersions,
   removeCompareLinks,
+  getRepositoryUrl,
 } from '../src/changelog.mts';
 
 const REPO_URL = 'https://github.com/owner/repo';
+
+test('getRepositoryUrl builds the URL from GitHub Actions environment variables', () => {
+  assert.equal(
+    getRepositoryUrl({
+      GITHUB_SERVER_URL: 'https://github.com',
+      GITHUB_REPOSITORY: 'owner/repo',
+    }),
+    REPO_URL,
+  );
+});
+
+test('getRepositoryUrl supports GitHub Enterprise and trims surrounding slashes', () => {
+  assert.equal(
+    getRepositoryUrl({
+      GITHUB_SERVER_URL: 'https://github.example.com/',
+      GITHUB_REPOSITORY: '/owner/repo/',
+    }),
+    'https://github.example.com/owner/repo',
+  );
+});
 
 test('stampChangelog inserts versioned heading below [Unreleased]', () => {
   const input = `
