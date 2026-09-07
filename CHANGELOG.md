@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-09-07
+
 - Use an empty option as the unselected release channel in workflow inputs
 - Add an optional Chrome extension that previews release version changes in GitHub's workflow form
 - Add diagnostic console logs for the extension's form detection and version preview flow
@@ -40,7 +42,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.2.0...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/vitalets/npm-release/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/vitalets/npm-release/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/vitalets/npm-release/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/vitalets/npm-release/compare/v2.0.0...v2.1.0
