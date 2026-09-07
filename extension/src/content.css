@@ -1,4 +1,7 @@
 .npm-release-preview {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 4px;
   margin-top: 8px;
   padding: 8px;
   border: 1px solid var(--borderColor-default, var(--color-border-default));
@@ -10,8 +13,7 @@
 }
 
 .npm-release-preview__row {
-  display: flex;
-  gap: 4px;
+  display: contents;
 }
 
 .npm-release-preview__label {

@@ -18,3 +18,10 @@ Open a GitHub Actions workflow and click **Run workflow**. The preview appears w
 The extension reads the version from the root `package.json` on the selected branch or tag. It updates the preview when you change the channel, version operation, or ref. The preview is informational and never blocks GitHub's **Run workflow** button.
 
 No GitHub token or extension configuration is required. Access to private repositories uses the existing signed-in GitHub session.
+
+## Debugging
+
+Open the workflow page's DevTools console and filter for `[npm-release helper]`. The extension logs
+when its content script starts, which workflow forms it finds, why a form is skipped, package version
+requests, and version preview calculations. After editing the unpacked extension, reload it on
+`chrome://extensions` and then reload the workflow page.

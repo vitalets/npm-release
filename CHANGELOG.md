@@ -6,6 +6,9 @@
 
 - Use an empty option as the unselected release channel in workflow inputs
 - Add an optional Chrome extension that previews release version changes in GitHub's workflow form
+- Add diagnostic console logs for the extension's form detection and version preview flow
+- Support GitHub's separate branch-selection and workflow-input forms in the version preview extension
+- Align the extension's Old version and New version preview rows
 
 ## [2.2.0] - 2026-09-04
 

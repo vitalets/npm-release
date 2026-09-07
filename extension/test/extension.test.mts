@@ -14,6 +14,14 @@ interface PreviewApi {
     | { status: 'error'; message: string }
   >;
   hasExpectedVersionOperations(values: string[]): boolean;
+  selectedRef(root: {
+    querySelector(selector: string):
+      | undefined
+      | {
+          querySelector(selector: string): { textContent?: string } | undefined;
+          textContent?: string;
+        };
+  }): { name: string; type: string } | undefined;
 }
 
 const context = { AbortController } as { __npmReleasePreview?: PreviewApi };
@@ -66,6 +74,24 @@ describe('Extension form detection', () => {
     assert.equal(
       preview.hasExpectedVersionOperations(['patch', 'minor', 'major', 'prerelease']),
       false,
+    );
+  });
+
+  test('reads the selected ref from the shared workflow dispatch container', () => {
+    const menuButton = { textContent: ' main ' };
+    const summary = {
+      textContent: 'Branch: main',
+      querySelector: (selector: string) =>
+        selector === '[data-menu-button]' ? menuButton : undefined,
+    };
+    const dispatch = {
+      querySelector: (selector: string) =>
+        selector === '.branch-selection summary' ? summary : undefined,
+    };
+
+    assert.equal(
+      JSON.stringify(preview.selectedRef(dispatch)),
+      JSON.stringify({ name: 'main', type: 'heads' }),
     );
   });
 });

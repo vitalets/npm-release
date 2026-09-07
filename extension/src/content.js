@@ -2,8 +2,27 @@
   'use strict';
 
   const PREVIEW_CLASS = 'npm-release-preview';
+  const LOG_PREFIX = '[npm-release helper]';
   const RELEASE_OPERATIONS = ['patch', 'minor', 'major'];
   const RELEASE_RANK = { patch: 0, minor: 1, major: 2 };
+  const formDiagnostics = new WeakMap();
+
+  function log(level, message, details) {
+    const logger = globalThis.console?.[level] ?? globalThis.console?.log;
+    if (!logger) return;
+    if (details === undefined) {
+      logger.call(globalThis.console, `${LOG_PREFIX} ${message}`);
+    } else {
+      logger.call(globalThis.console, `${LOG_PREFIX} ${message}`, details);
+    }
+  }
+
+  function logFormDiagnostic(form, status, details) {
+    if (formDiagnostics.get(form) === status) return;
+    formDiagnostics.set(form, status);
+    const level = status === 'enhanced' ? 'info' : status.startsWith('skipped:') ? 'warn' : 'debug';
+    log(level, `Form ${status}`, { form, ...details });
+  }
 
   function firstToken(value) {
     return value.trim().split(/\s+/, 1)[0];
@@ -136,11 +155,17 @@
       controller?.abort();
       controller = new AbortController();
       const currentRequestId = ++requestId;
+      log('debug', 'Loading package version', { requestId: currentRequestId, url });
 
       try {
         const response = await fetchImplementation(url, {
           credentials: 'same-origin',
           signal: controller.signal,
+        });
+        log('debug', 'Package response received', {
+          requestId: currentRequestId,
+          status: response.status,
+          url,
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -150,20 +175,34 @@
         }
         parseVersion(packageJson.version);
 
-        return currentRequestId === requestId
-          ? { status: 'success', version: packageJson.version }
-          : { status: 'stale' };
-      } catch (error) {
-        if (currentRequestId !== requestId || error?.name === 'AbortError') {
+        if (currentRequestId !== requestId) {
+          log('debug', 'Ignoring stale package response', { requestId: currentRequestId, url });
           return { status: 'stale' };
         }
-        return { status: 'error', message: error instanceof Error ? error.message : String(error) };
+
+        log('info', 'Package version loaded', {
+          requestId: currentRequestId,
+          url,
+          version: packageJson.version,
+        });
+        return { status: 'success', version: packageJson.version };
+      } catch (error) {
+        if (currentRequestId !== requestId || error?.name === 'AbortError') {
+          log('debug', 'Package request aborted or superseded', {
+            requestId: currentRequestId,
+            url,
+          });
+          return { status: 'stale' };
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        log('error', 'Could not load package version', { requestId: currentRequestId, url, message });
+        return { status: 'error', message };
       }
     };
   }
 
-  function selectedRef(form) {
-    const summary = form.querySelector('.branch-selection summary');
+  function selectedRef(root) {
+    const summary = root?.querySelector('.branch-selection summary');
     const name = summary?.querySelector('[data-menu-button]')?.textContent?.trim();
     if (!name) return undefined;
     return { name, type: summary.textContent?.includes('Tag:') ? 'tags' : 'heads' };
@@ -194,23 +233,57 @@
   }
 
   function enhanceForm(form, loader) {
-    if (form.dataset.npmReleasePreview === 'true') return;
+    if (form.dataset.npmReleasePreview === 'true') {
+      logFormDiagnostic(form, 'already enhanced');
+      return;
+    }
 
     const channel = form.querySelector('select[name="inputs[channel]"]');
     const version = form.querySelector('select[name="inputs[version]"]');
-    if (!(channel instanceof HTMLSelectElement) || !(version instanceof HTMLSelectElement)) return;
-    if (!hasExpectedVersionOperations([...version.options].map((option) => option.value))) return;
+    if (!(channel instanceof HTMLSelectElement) || !(version instanceof HTMLSelectElement)) {
+      logFormDiagnostic(form, 'skipped: release inputs not found together', {
+        channelFound: channel instanceof HTMLSelectElement,
+        versionFound: version instanceof HTMLSelectElement,
+      });
+      return;
+    }
 
-    const ref = selectedRef(form);
+    const versionOperations = [...version.options].map((option) => option.value);
+    if (!hasExpectedVersionOperations(versionOperations)) {
+      logFormDiagnostic(form, 'skipped: unexpected version operations', { versionOperations });
+      return;
+    }
+
+    const dispatch = form.closest('.workflow-dispatch');
+    const ref = selectedRef(dispatch);
     const repository = repositoryFromLocation();
     const versionGroup = version.closest('.form-group');
-    if (!ref || !repository || !versionGroup) return;
+    if (!ref || !repository || !versionGroup) {
+      logFormDiagnostic(form, 'skipped: required context not found', {
+        dispatchFound: Boolean(dispatch),
+        ref,
+        repository,
+        versionGroupFound: Boolean(versionGroup),
+        branchSelectorElsewhere: Boolean(
+          document.querySelector('.workflow-dispatch .branch-selection'),
+        ),
+      });
+      return;
+    }
 
     form.dataset.npmReleasePreview = 'true';
+    const packageUrl = rawPackageUrl(repository, ref);
+    logFormDiagnostic(form, 'enhanced', {
+      repository,
+      ref,
+      channel: channel.value,
+      versionOperation: version.value,
+      packageUrl,
+    });
     const panel = document.createElement('div');
     panel.className = PREVIEW_CLASS;
     panel.setAttribute('aria-live', 'polite');
-    const currentRow = createRow('Current version');
+    const currentRow = createRow('Old version');
     const nextRow = createRow('New version');
     panel.append(currentRow.row, nextRow.row);
     versionGroup.after(panel);
@@ -223,10 +296,24 @@
         return;
       }
       try {
-        nextRow.value.textContent = calculateNextVersion(currentVersion, channel.value, version.value);
+        const nextVersion = calculateNextVersion(currentVersion, channel.value, version.value);
+        nextRow.value.textContent = nextVersion;
+        log('debug', 'Version preview calculated', {
+          currentVersion,
+          channel: channel.value,
+          versionOperation: version.value,
+          nextVersion,
+        });
       } catch (error) {
-        nextRow.value.textContent = error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error ? error.message : String(error);
+        nextRow.value.textContent = message;
         nextRow.value.classList.add(`${PREVIEW_CLASS}__value--error`);
+        log('warn', 'Could not calculate version preview', {
+          currentVersion,
+          channel: channel.value,
+          versionOperation: version.value,
+          message,
+        });
       }
     };
 
@@ -235,8 +322,15 @@
     channel.addEventListener('change', render);
     version.addEventListener('change', render);
 
-    void loader(rawPackageUrl(repository, ref)).then((result) => {
-      if (result.status === 'stale' || !panel.isConnected) return;
+    void loader(packageUrl).then((result) => {
+      if (result.status === 'stale' || !panel.isConnected) {
+        log('debug', 'Ignoring package result for inactive preview', {
+          packageUrl,
+          resultStatus: result.status,
+          panelConnected: panel.isConnected,
+        });
+        return;
+      }
       if (result.status === 'error') {
         currentRow.value.textContent = `Unavailable (${result.message})`;
         currentRow.value.classList.add(`${PREVIEW_CLASS}__value--error`);
@@ -249,13 +343,24 @@
   }
 
   function start() {
+    log('info', 'Content script started', {
+      url: location.href,
+      readyState: document.readyState,
+    });
     const loader = createPackageVersionLoader(fetch);
     let scanQueued = false;
+    let previousFormCount;
     const scan = () => {
       scanQueued = false;
-      document
-        .querySelectorAll('.workflow-dispatch form')
-        .forEach((form) => enhanceForm(form, loader));
+      const forms = [...document.querySelectorAll('.workflow-dispatch form')];
+      if (forms.length !== previousFormCount) {
+        log(forms.length ? 'debug' : 'warn', 'Scanning workflow dispatch forms', {
+          formCount: forms.length,
+          workflowDispatchFound: Boolean(document.querySelector('.workflow-dispatch')),
+        });
+        previousFormCount = forms.length;
+      }
+      forms.forEach((form) => enhanceForm(form, loader));
     };
     const queueScan = () => {
       if (scanQueued) return;
@@ -272,6 +377,7 @@
     calculateNextVersion,
     createPackageVersionLoader,
     hasExpectedVersionOperations,
+    selectedRef,
   };
 
   if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') start();
