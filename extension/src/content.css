@@ -1,0 +1,31 @@
+.npm-release-preview {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--borderColor-default, var(--color-border-default));
+  border-radius: 6px;
+  color: var(--fgColor-default, var(--color-fg-default));
+  background: var(--bgColor-muted, var(--color-canvas-subtle));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.npm-release-preview__row {
+  display: flex;
+  gap: 4px;
+}
+
+.npm-release-preview__label {
+  color: var(--fgColor-muted, var(--color-fg-muted));
+}
+
+.npm-release-preview__value {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-weight: 600;
+}
+
+.npm-release-preview__value--error {
+  color: var(--fgColor-danger, var(--color-danger-fg));
+  font-family: inherit;
+  font-weight: 400;
+}

@@ -9,7 +9,7 @@
     "url": "https://github.com/vitalets/npm-release.git"
   },
   "scripts": {
-    "test": "node --test test/**/*.mts"
+    "test": "node --test test/*.test.mts extension/test/*.test.mts"
   },
   "devDependencies": {
     "@types/node": "^25.9.1"

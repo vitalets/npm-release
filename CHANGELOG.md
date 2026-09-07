@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 - Use an empty option as the unselected release channel in workflow inputs
+- Add an optional Chrome extension that previews release version changes in GitHub's workflow form
 
 ## [2.2.0] - 2026-09-04
 

@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "npm release version preview",
+  "version": "1.0.0",
+  "description": "Preview npm-release version changes in GitHub's Run workflow form.",
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*/*/actions/workflows/*"],
+      "css": ["content.css"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
