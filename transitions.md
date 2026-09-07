@@ -1,6 +1,6 @@
 # Version transitions
 
-Select a Channel explicitly; the action rejects the `-` placeholder. Version defaults to `patch` in the workflow UI.
+Select a Channel explicitly; the action rejects the empty placeholder. Version defaults to `patch` in the workflow UI.
 
 - Channel `stable` follows npm's stable SemVer behavior and publishes with the default `latest` tag.
 - Any other channel is used as both the SemVer prerelease identifier and npm dist-tag. The examples use the conventional npm `next` tag; consumers can add other options such as `alpha`, `rc`, or `canary` to their workflow.

@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Use an empty option as the unselected release channel in workflow inputs
+
 ## [2.2.0] - 2026-09-04
 
 - Derive changelog links from the GitHub Actions repository environment instead of `package.json`

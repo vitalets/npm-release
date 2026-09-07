@@ -45,7 +45,7 @@ export function npmVersionOperation(
   channel: string,
   versionChoice: string,
 ): NpmVersionOperation {
-  if (!channel || channel === '-') {
+  if (!channel) {
     throw new Error('Select a release channel');
   }
 

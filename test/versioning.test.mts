@@ -119,12 +119,6 @@ describe('Version transitions', () => {
 describe('Input validation', () => {
   const invalidCases = [
     {
-      name: 'rejects the unselected channel placeholder',
-      channel: '-',
-      version: 'patch',
-      error: 'Select a release channel',
-    },
-    {
       name: 'rejects an empty channel',
       channel: '',
       version: 'patch',

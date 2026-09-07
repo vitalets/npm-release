@@ -55,9 +55,9 @@ on:
         description: Channel
         required: true
         type: choice
-        default: '-'
+        default: ''
         options:
-          - '-'
+          - ''
           - stable
           - next
       version:
