@@ -7,7 +7,8 @@
  *
  * Version labels may include explanatory text after the operation name; only
  * the first whitespace-delimited token is treated as the canonical operation.
- * Channel names are passed to npm unchanged as the prerelease identifier.
+ * Channel names must start with an ASCII letter and are otherwise passed to
+ * npm unchanged as the prerelease identifier.
  *
  * Runtime usage (Node.js ≥ 24):
  *   node src/versioning.mts <current-version> <channel> <version>
@@ -45,7 +46,7 @@ export function npmVersionOperation(
   channel: string,
   versionChoice: string,
 ): NpmVersionOperation {
-  if (!channel) {
+  if (!/^[a-z]/i.test(channel)) {
     throw new Error('Select a release channel');
   }
 

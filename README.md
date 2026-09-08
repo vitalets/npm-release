@@ -143,7 +143,7 @@ npm install package-name@next
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `channel` | yes | — | `stable` for a stable release, or an npm prerelease identifier and matching dist-tag such as `next`. |
+| `channel` | yes | — | `stable` for a stable release, or an npm prerelease identifier and matching dist-tag such as `next`. Must start with a letter. |
 | `version` | yes | — | Version increment: `patch`, `minor`, or `major`. |
 | `skip-npm-publish` | no | `false` | Skip the `npm publish` step |
 | `dry-run` | no | `false` | No git push, no npm publish — prints a summary of what would happen |

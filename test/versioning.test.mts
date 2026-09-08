@@ -36,6 +36,24 @@ describe('Input validation', () => {
       error: 'Select a release channel',
     },
     {
+      name: 'rejects a channel starting with punctuation',
+      channel: '-select-',
+      version: 'patch',
+      error: 'Select a release channel',
+    },
+    {
+      name: 'rejects a channel starting with a number',
+      channel: '1next',
+      version: 'patch',
+      error: 'Select a release channel',
+    },
+    {
+      name: 'rejects a channel starting with whitespace',
+      channel: ' next',
+      version: 'patch',
+      error: 'Select a release channel',
+    },
+    {
       name: 'rejects an unknown version operation',
       channel: 'stable',
       version: 'promote-next',
@@ -57,6 +75,10 @@ describe('Input validation', () => {
       );
     });
   }
+});
+
+test('accepts a custom channel starting with a letter', () => {
+  assert.equal(npmVersionOperation('1.2.3', 'beta-2', 'patch'), 'prepatch');
 });
 
 function verifyPackageVersion(

@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 - Update `actions/checkout` and `actions/setup-node` examples and workflows to v7
+- Reject release channel inputs that do not start with a letter
 
 ## [2.3.0] - 2026-09-07
 
