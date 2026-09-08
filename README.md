@@ -89,9 +89,9 @@ jobs:
       id-token: write  # OIDC trusted publishing to npm
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           # Required: writes .npmrc so OIDC token exchange works during npm publish

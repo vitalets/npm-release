@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Update `actions/checkout` and `actions/setup-node` examples and workflows to v7
+
 ## [2.3.0] - 2026-09-07
 
 - Use an empty option as the unselected release channel in workflow inputs
