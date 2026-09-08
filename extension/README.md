@@ -2,6 +2,8 @@
 
 A minimal Chrome extension that adds current and next package versions to GitHub's **Run workflow** form.
 
+<img src="https://raw.githubusercontent.com/vitalets/npm-release/main/extension/screenshot.png" alt="Chrome extension showing the current and next package versions in GitHub's Run workflow form" width="368">
+
 ## Install locally
 
 1. Open `chrome://extensions`.
