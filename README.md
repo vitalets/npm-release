@@ -129,12 +129,6 @@ On GitHub:
 
 See [Version transitions](transitions.md) for the complete release behavior reference.
 
-### Chrome version preview
-
-The optional [Chrome extension](extension/README.md) shows the current package version and the exact next version directly in GitHub's **Run workflow** form.
-
-<img src="https://raw.githubusercontent.com/vitalets/npm-release/main/extension/screenshot.png" alt="Chrome extension showing the current and next package versions in GitHub's Run workflow form" width="368">
-
 ### Pre-release
 
 Selecting any non-`stable` channel (e.g. `next`, `alpha`, `beta`, `rc`, etc) creates a prerelease version such as `1.2.3-next.0` and publishes it with the correspoinding npm dist-tag. Consumers can install that release explicitly, for example:
@@ -152,6 +146,12 @@ npm install package-name@next
 | `skip-npm-publish` | no | `false` | Skip the `npm publish` step |
 | `dry-run` | no | `false` | No git push, no npm publish — prints a summary of what would happen |
 | `github-token` | yes | — | Pass `secrets.GITHUB_TOKEN` — used for git push and creating the GitHub Release |
+
+## Chrome extension
+
+The optional [Chrome extension](extension/README.md) shows the current package version and the exact next version directly in GitHub's **Run workflow** form.
+
+<img src="https://raw.githubusercontent.com/vitalets/npm-release/main/extension/screenshot.png" alt="Chrome extension showing the current and next package versions in GitHub's Run workflow form" width="368">
 
 ## Development
 
