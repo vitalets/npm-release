@@ -2,13 +2,15 @@
 
 [![Test](https://github.com/vitalets/npm-release/actions/workflows/test.yml/badge.svg)](https://github.com/vitalets/npm-release/actions/workflows/test.yml)
 
-A GitHub composite action that performs a full npm package release:
+A GitHub action that performs a full npm package release:
 
 1. Applies an explicit release channel and version increment to `package.json`
 2. Updates `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format
 3. Commits, tags, and pushes the release commit
 4. Publishes to npm via **OIDC trusted publishing** — no stored npm token required
 5. Creates a GitHub Release with the extracted changelog notes
+
+<img src="https://raw.githubusercontent.com/vitalets/npm-release/main/screenshot.png" alt="GitHub Run workflow form for selecting the release channel and version" width="368">
 
 ## Prerequisites
 
