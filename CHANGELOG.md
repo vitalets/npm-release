@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-09-23
+
 - Pin workflows and examples to `ubuntu-24.04` to avoid runner version migration warnings
 - Rename the extension's Old version label to Cur versioin and explicitly left-align version values
 - Update `actions/checkout` and `actions/setup-node` examples and workflows to v7
@@ -47,7 +49,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.0...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.1...HEAD
+[2.3.1]: https://github.com/vitalets/npm-release/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/vitalets/npm-release/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/vitalets/npm-release/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/vitalets/npm-release/compare/v2.1.0...v2.1.1
