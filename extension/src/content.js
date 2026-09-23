@@ -283,7 +283,7 @@
     const panel = document.createElement('div');
     panel.className = PREVIEW_CLASS;
     panel.setAttribute('aria-live', 'polite');
-    const currentRow = createRow('Old version');
+    const currentRow = createRow('Cur version');
     const nextRow = createRow('New version');
     panel.append(currentRow.row, nextRow.row);
     versionGroup.after(panel);

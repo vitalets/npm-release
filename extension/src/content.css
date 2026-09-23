@@ -21,6 +21,7 @@
 }
 
 .npm-release-preview__value {
+  text-align: left;
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   font-weight: 600;
