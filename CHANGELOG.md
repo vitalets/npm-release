@@ -4,6 +4,7 @@
 
 ## [Unreleased]
 
+- Pin workflows and examples to `ubuntu-24.04` to avoid runner version migration warnings
 - Rename the extension's Old version label to Cur versioin and explicitly left-align version values
 - Update `actions/checkout` and `actions/setup-node` examples and workflows to v7
 - Reject release channel inputs that do not start with a letter
