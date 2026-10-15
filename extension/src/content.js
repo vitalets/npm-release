@@ -7,8 +7,28 @@
   const RELEASE_RANK = { patch: 0, minor: 1, major: 2 };
   const formDiagnostics = new WeakMap();
   const formPreviews = new WeakMap();
+  let loggingEnabled = false;
+
+  async function initializeLogging() {
+    if (!globalThis.chrome?.storage) return;
+    let settingChanged = false;
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== 'local' || !changes.loggingEnabled) return;
+      settingChanged = true;
+      loggingEnabled = changes.loggingEnabled.newValue === true;
+    });
+    try {
+      const settings = await chrome.storage.local.get({ loggingEnabled: false });
+      if (!settingChanged) loggingEnabled = settings.loggingEnabled === true;
+    } catch {
+      // Keep previews working with logging disabled if storage is unavailable.
+    }
+  }
+
+  const loggingReady = initializeLogging();
 
   function log(level, message, details) {
+    if (!loggingEnabled) return;
     const logger = globalThis.console?.[level] ?? globalThis.console?.log;
     if (!logger) return;
     if (details === undefined) {
@@ -19,6 +39,7 @@
   }
 
   function logFormDiagnostic(form, status, details) {
+    if (!loggingEnabled) return;
     if (formDiagnostics.get(form) === status) return;
     formDiagnostics.set(form, status);
     const level = status === 'enhanced' ? 'info' : status.startsWith('skipped:') ? 'warn' : 'debug';
@@ -408,5 +429,7 @@
     selectedRef,
   };
 
-  if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') start();
+  if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') {
+    void loggingReady.then(start);
+  }
 })();

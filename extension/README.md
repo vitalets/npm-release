@@ -25,7 +25,10 @@ No GitHub token or extension configuration is required. Access to private reposi
 
 ## Debugging
 
-Open the workflow page's DevTools console and filter for `[npm-release helper]`. The extension logs
+Logging is disabled by default. Right-click the extension's toolbar icon and check **Enable logging**
+to enable it (uncheck to disable). The setting is saved and applies to open workflow pages immediately.
+Open the workflow page's DevTools console and filter for `[npm-release helper]`. Reload the page to
+capture startup diagnostics. When enabled, the extension logs
 when its content script starts, which workflow forms it finds, why a form is skipped, package version
 requests, and version preview calculations. After editing the unpacked extension, reload it on
 `chrome://extensions` and then reload the workflow page.

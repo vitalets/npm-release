@@ -127,3 +127,33 @@ describe('Package version loading', () => {
     assert.equal(JSON.stringify(await first), '{"status":"stale"}');
   });
 });
+
+test('extension logging defaults off and can be toggled', async () => {
+  let onChanged: (changes: object, area: string) => void;
+  const messages: unknown[] = [];
+  const sandbox = {
+    AbortController,
+    console: { log: (...args: unknown[]) => messages.push(args) },
+    chrome: { storage: {
+      local: { get: async () => ({}) },
+      onChanged: { addListener: (listener: typeof onChanged) => { onChanged = listener; } },
+    } },
+    __npmReleasePreview: undefined as PreviewApi | undefined,
+  };
+  runInNewContext(readFileSync(new URL('../src/content.js', import.meta.url), 'utf8'), sandbox);
+  const load = sandbox.__npmReleasePreview!.createPackageVersionLoader(
+    async () => Response.json({ version: '1.2.3' }),
+  );
+
+  await load('/package.json');
+  assert.equal(messages.length, 0);
+
+  onChanged!({ loggingEnabled: { newValue: true } }, 'local');
+  await load('/package.json');
+  assert.ok(messages.length > 0);
+
+  onChanged!({ loggingEnabled: { newValue: false } }, 'local');
+  messages.length = 0;
+  await load('/package.json');
+  assert.equal(messages.length, 0);
+});

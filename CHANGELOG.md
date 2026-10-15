@@ -4,6 +4,7 @@
 
 ## [Unreleased]
 
+- Disable extension logging by default and add an “Enable logging” checkbox to its toolbar context menu
 - Support GitHub’s new workflow dispatch side panel and refresh version previews on ref changes
 
 ## [2.3.1] - 2026-09-23
