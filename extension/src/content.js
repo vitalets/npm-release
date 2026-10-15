@@ -6,6 +6,7 @@
   const RELEASE_OPERATIONS = ['patch', 'minor', 'major'];
   const RELEASE_RANK = { patch: 0, minor: 1, major: 2 };
   const formDiagnostics = new WeakMap();
+  const formPreviews = new WeakMap();
 
   function log(level, message, details) {
     const logger = globalThis.console?.[level] ?? globalThis.console?.log;
@@ -202,6 +203,14 @@
   }
 
   function selectedRef(root) {
+    const picker = root?.querySelector('button[data-icv-name="Switch branches/tags"]');
+    if (picker) {
+      const name = picker.querySelector('[data-component="text"]')?.textContent?.trim();
+      if (!name) return undefined;
+      if (picker.querySelector('.octicon-tag')) return { name, type: 'tags' };
+      if (picker.querySelector('.octicon-git-branch')) return { name, type: 'heads' };
+      return undefined;
+    }
     const summary = root?.querySelector('.branch-selection summary');
     const name = summary?.querySelector('[data-menu-button]')?.textContent?.trim();
     if (!name) return undefined;
@@ -232,15 +241,12 @@
     return { row, value };
   }
 
-  function enhanceForm(form, loader) {
-    if (form.dataset.npmReleasePreview === 'true') {
-      logFormDiagnostic(form, 'already enhanced');
-      return;
-    }
-
+  function enhanceForm(form) {
+    const existing = formPreviews.get(form);
     const channel = form.querySelector('select[name="inputs[channel]"]');
     const version = form.querySelector('select[name="inputs[version]"]');
     if (!(channel instanceof HTMLSelectElement) || !(version instanceof HTMLSelectElement)) {
+      existing?.dispose();
       logFormDiagnostic(form, 'skipped: release inputs not found together', {
         channelFound: channel instanceof HTMLSelectElement,
         versionFound: version instanceof HTMLSelectElement,
@@ -250,15 +256,17 @@
 
     const versionOperations = [...version.options].map((option) => option.value);
     if (!hasExpectedVersionOperations(versionOperations)) {
+      existing?.dispose();
       logFormDiagnostic(form, 'skipped: unexpected version operations', { versionOperations });
       return;
     }
 
-    const dispatch = form.closest('.workflow-dispatch');
+    const dispatch = form.closest('[data-testid="workflow-dispatch-dialog-content"], .workflow-dispatch');
     const ref = selectedRef(dispatch);
     const repository = repositoryFromLocation();
-    const versionGroup = version.closest('.form-group');
+    const versionGroup = version.closest('[data-component="FormControl"], .form-group');
     if (!ref || !repository || !versionGroup) {
+      existing?.dispose();
       logFormDiagnostic(form, 'skipped: required context not found', {
         dispatchFound: Boolean(dispatch),
         ref,
@@ -271,7 +279,12 @@
       return;
     }
 
-    form.dataset.npmReleasePreview = 'true';
+    if (existing && existing.channel === channel && existing.version === version && existing.panel.isConnected) {
+      existing.update(rawPackageUrl(repository, ref));
+      return;
+    }
+    existing?.dispose();
+    const loader = createPackageVersionLoader(fetch);
     const packageUrl = rawPackageUrl(repository, ref);
     logFormDiagnostic(form, 'enhanced', {
       repository,
@@ -317,29 +330,39 @@
       }
     };
 
-    currentRow.value.textContent = 'Loading…';
-    render();
     channel.addEventListener('change', render);
     version.addEventListener('change', render);
 
-    void loader(packageUrl).then((result) => {
-      if (result.status === 'stale' || !panel.isConnected) {
-        log('debug', 'Ignoring package result for inactive preview', {
-          packageUrl,
-          resultStatus: result.status,
-          panelConnected: panel.isConnected,
-        });
-        return;
-      }
-      if (result.status === 'error') {
-        currentRow.value.textContent = `Unavailable (${result.message})`;
-        currentRow.value.classList.add(`${PREVIEW_CLASS}__value--error`);
-        return;
-      }
-      currentVersion = result.version;
-      currentRow.value.textContent = currentVersion;
+    let loadedUrl;
+    const update = (url) => {
+      if (loadedUrl === url) return;
+      loadedUrl = url;
+      currentVersion = undefined;
+      currentRow.value.textContent = 'Loading…';
+      currentRow.value.classList.remove(`${PREVIEW_CLASS}__value--error`);
       render();
+      void loader(url).then((result) => {
+        if (result.status === 'stale' || !panel.isConnected || loadedUrl !== url) return;
+        if (result.status === 'error') {
+          currentRow.value.textContent = `Unavailable (${result.message})`;
+          currentRow.value.classList.add(`${PREVIEW_CLASS}__value--error`);
+          return;
+        }
+        currentVersion = result.version;
+        currentRow.value.textContent = currentVersion;
+        render();
+      });
+    };
+    formPreviews.set(form, {
+      channel, version, panel, update,
+      dispose() {
+        formPreviews.delete(form);
+        channel.removeEventListener('change', render);
+        version.removeEventListener('change', render);
+        panel.remove();
+      },
     });
+    update(packageUrl);
   }
 
   function start() {
@@ -347,12 +370,11 @@
       url: location.href,
       readyState: document.readyState,
     });
-    const loader = createPackageVersionLoader(fetch);
     let scanQueued = false;
     let previousFormCount;
     const scan = () => {
       scanQueued = false;
-      const forms = [...document.querySelectorAll('.workflow-dispatch form')];
+      const forms = [...document.querySelectorAll('.workflow-dispatch form, [data-testid="workflow-dispatch-dialog-content"] form')];
       if (forms.length !== previousFormCount) {
         log(forms.length ? 'debug' : 'warn', 'Scanning workflow dispatch forms', {
           formCount: forms.length,
@@ -360,7 +382,7 @@
         });
         previousFormCount = forms.length;
       }
-      forms.forEach((form) => enhanceForm(form, loader));
+      forms.forEach((form) => enhanceForm(form));
     };
     const queueScan = () => {
       if (scanQueued) return;
@@ -368,7 +390,13 @@
       queueMicrotask(scan);
     };
 
-    new MutationObserver(queueScan).observe(document.documentElement, { childList: true, subtree: true });
+    new MutationObserver(queueScan).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['aria-busy'],
+    });
     scan();
   }
 

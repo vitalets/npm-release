@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mts extension/test/*.test.mts",
-    "fetch-tags": "git fetch --tags --force"
+    "sync": "git pull && git fetch --tags --force"
   },
   "devDependencies": {
     "@types/node": "^25.9.1"
