@@ -395,6 +395,9 @@
     let previousFormCount;
     const scan = () => {
       scanQueued = false;
+      // GitHub navigation can replace page content without loading a new document.
+      // Stay installed across the site, but only inspect forms on workflow pages.
+      if (!repositoryFromLocation()) return;
       const forms = [...document.querySelectorAll('.workflow-dispatch form, [data-testid="workflow-dispatch-dialog-content"] form')];
       if (forms.length !== previousFormCount) {
         log(forms.length ? 'debug' : 'warn', 'Scanning workflow dispatch forms', {

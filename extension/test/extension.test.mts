@@ -29,6 +29,60 @@ runInNewContext(readFileSync(new URL('../src/content.js', import.meta.url), 'utf
 const preview = context.__npmReleasePreview;
 assert.ok(preview);
 
+test('extension scans workflows after navigation from another GitHub page', async () => {
+  const manifest = JSON.parse(readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'));
+  assert.ok(manifest.content_scripts[0].matches.includes('https://github.com/*'));
+
+  let onMutation: () => void = () => assert.fail('Observer was not installed');
+  let scans = 0;
+  let formsInspected = 0;
+  const location = { pathname: '/owner/repo', href: 'https://github.com/owner/repo' };
+  const sandbox = {
+    location,
+    queueMicrotask,
+    HTMLSelectElement: class {},
+    document: {
+      readyState: 'complete',
+      documentElement: {},
+      querySelector() { return null; },
+      querySelectorAll() {
+        scans += 1;
+        return [{
+          querySelector() {
+            formsInspected += 1;
+            return null;
+          },
+        }];
+      },
+    },
+    MutationObserver: class {
+      constructor(callback: () => void) { onMutation = callback; }
+      observe() {}
+    },
+  };
+  runInNewContext(readFileSync(new URL('../src/content.js', import.meta.url), 'utf8'), sandbox);
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(scans, 0);
+
+  location.pathname = '/owner/repo/actions/workflows/release.yml';
+  onMutation();
+  onMutation();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(scans, 1);
+  assert.equal(formsInspected, 2);
+
+  location.pathname = '/owner/repo/issues';
+  onMutation();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(scans, 1);
+
+  location.pathname = '/owner/repo/actions/workflows/another.yml';
+  onMutation();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(scans, 2);
+  assert.equal(formsInspected, 4);
+});
+
 describe('Extension version preview', () => {
   for (const table of versionTables) {
     for (const [channel, operation, expectedVersion] of table.transitions) {
