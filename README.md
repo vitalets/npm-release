@@ -12,11 +12,23 @@ A GitHub action that performs a full npm package release:
 
 <img src="https://raw.githubusercontent.com/vitalets/npm-release/main/screenshot.png" alt="GitHub Run workflow form for selecting the release channel and version" width="368">
 
-## Prerequisites
+## Usage
 
-### 1. Enable OIDC Trusted Publishing
+### 1. Publish the first version manually
 
-This action publishes to npm using [OIDC Trusted Publishing](https://docs.npmjs.com/generating-provenance-statements#publishing-with-a-trusted-publisher) — no `NPM_TOKEN` secret needed. Configure your package on npmjs.com:
+Your package must exist on npm before you can configure trusted publishing. If you haven't published it yet, run these commands from your package directory after completing your build and tests:
+
+```sh
+npm login
+# ...commands to build your package, e.g. npm run build
+npm publish --access public
+```
+
+This publishes the version specified in `package.json`. The `--access public` flag also makes scoped packages public.
+
+### 2. Enable OIDC Trusted Publishing
+
+Configure [OIDC Trusted Publishing](https://docs.npmjs.com/generating-provenance-statements#publishing-with-a-trusted-publisher) for your package on npmjs.com:
 
 1. Go to your package on [npmjs.com](https://www.npmjs.com) → **Access** → **Trusted Publishers**
 2. Add a new trusted publisher:
@@ -25,7 +37,7 @@ This action publishes to npm using [OIDC Trusted Publishing](https://docs.npmjs.
    - **Repository name**: your repository
    - **Workflow filename**: the workflow file that calls this action (e.g. `release.yml`)
 
-### 2. Add CHANGELOG.md
+### 3. Add CHANGELOG.md
 
 Your repository must have a `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format with an `## [Unreleased]` section:
 
@@ -41,11 +53,12 @@ Your repository must have a `CHANGELOG.md` following [Keep a Changelog](https://
 ...
 ```
 
-## Usage
-
-### 1. Setup release workflow
+### 4. Set up release workflow
 
 Copy-paste the following workflow to `.github/workflows/release.yml`:
+
+<details>
+<summary>release.yml</summary>
 
 ```yaml
 name: release
@@ -115,9 +128,11 @@ jobs:
           github-token:     ${{ secrets.GITHUB_TOKEN }}
 ```
 
+</details>
+
 Adjust you project spesific pre-release checks (linting, tests).
 
-### 2. Run the workflow
+### 5. Run the workflow
 
 On GitHub:
 
