@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-10-23
+
 - Document updating the local branch after releases and add a release summary with old and new versions, a GitHub Release link when available, and a reminder to run `git pull --rebase`
 
 ## [2.3.2] - 2026-10-23
@@ -57,7 +59,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.2...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.3...HEAD
+[2.3.3]: https://github.com/vitalets/npm-release/compare/v2.3.2...v2.3.3
 [2.3.2]: https://github.com/vitalets/npm-release/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/vitalets/npm-release/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/vitalets/npm-release/compare/v2.2.0...v2.3.0
