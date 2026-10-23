@@ -4,9 +4,10 @@
 
 ## [Unreleased]
 
+- Document updating the local branch after releases and add a release summary with old and new versions, a GitHub Release link when available, and a reminder to run `git pull --rebase`
+
 ## [2.3.2] - 2026-10-23
 
-- Document local checkout syncing after releases and add a GitHub Actions notice and summary reminding users to run `git pull --rebase`
 - Attach the extension when navigating to a GitHub workflow without requiring a page reload
 - Disable extension logging by default and add an “Enable logging” checkbox to its toolbar context menu
 - Support GitHub’s new workflow dispatch side panel and refresh version previews on ref changes

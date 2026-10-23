@@ -41,6 +41,7 @@ runs:
         VERSION_INCREMENT: ${{ inputs.version }}
       run: |
         CURRENT_VERSION=$(npm pkg get version | tr -d '"')
+        echo "PREVIOUS_VERSION=$CURRENT_VERSION" >> "$GITHUB_ENV"
         VERSION_OPERATION=$(node "$GITHUB_ACTION_PATH/src/versioning.mts" "$CURRENT_VERSION" "$CHANNEL" "$VERSION_INCREMENT")
         if [[ "$CHANNEL" == "stable" ]]; then
           npm version "$VERSION_OPERATION" --no-git-tag-version
@@ -64,6 +65,7 @@ runs:
         echo "EOF" >> $GITHUB_ENV
 
     - name: Commit, tag, push
+      id: commit-release
       if: ${{ inputs.dry-run != 'true' }}
       shell: bash
       run: |
@@ -73,17 +75,6 @@ runs:
         git push --no-verify origin HEAD --tags
       env:
         GH_TOKEN: ${{ inputs.github-token }}
-
-    - name: Remind to update local branch
-      if: ${{ inputs.dry-run != 'true' }}
-      shell: bash
-      run: |
-        printf '::notice title=Update local branch::Run git pull --rebase locally.\n'
-        {
-          printf '### Update local branch\n\n'
-          printf 'Release commit and tag pushed. In your local checkout of `%s`, switch to `%s` and run:\n\n' "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME"
-          printf '```sh\ngit pull --rebase\n```\n'
-        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Publish to npm
       if: ${{ inputs.dry-run != 'true' && inputs.skip-npm-publish != 'true' }}
@@ -103,11 +94,29 @@ runs:
     # Skipped for pre-releases: GitHub Releases are only created for stable
     # versions to keep the release list clean.
     - name: Create GitHub Release
+      id: create-github-release
       if: ${{ inputs.dry-run != 'true' && steps.bump-version.outputs.prerelease != 'true' }}
       shell: bash
       run: echo "$NOTES" | gh release create "v${{ env.VERSION }}" --title "v${{ env.VERSION }}" --notes-file -
       env:
         GH_TOKEN: ${{ inputs.github-token }}
+
+    - name: Release summary
+      if: ${{ !cancelled() && steps.commit-release.outcome == 'success' }}
+      shell: bash
+      env:
+        GITHUB_RELEASE_CREATED: ${{ steps.create-github-release.outcome == 'success' }}
+      run: |
+        {
+          printf '### Release summary\n\n'
+          printf '| Old version | New version |\n| --- | --- |\n'
+          printf '| `%s` | `%s` |\n\n' "$PREVIOUS_VERSION" "$VERSION"
+          if [[ "$GITHUB_RELEASE_CREATED" == 'true' ]]; then
+            printf '[View GitHub Release](%s/%s/releases/tag/v%s)\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$VERSION"
+          fi
+          printf 'Update your local branch:\n\n'
+          printf '```sh\ngit pull --rebase\n```\n'
+        } >> "$GITHUB_STEP_SUMMARY"
 
     - name: Dry run summary
       if: ${{ inputs.dry-run == 'true' }}
