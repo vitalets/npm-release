@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-10-23
+
 - Document local checkout syncing after releases and add a GitHub Actions notice and summary reminding users to run `git pull --rebase`
 - Attach the extension when navigating to a GitHub workflow without requiring a page reload
 - Disable extension logging by default and add an “Enable logging” checkbox to its toolbar context menu
@@ -54,7 +56,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.1...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.2...HEAD
+[2.3.2]: https://github.com/vitalets/npm-release/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/vitalets/npm-release/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/vitalets/npm-release/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/vitalets/npm-release/compare/v2.1.1...v2.2.0
