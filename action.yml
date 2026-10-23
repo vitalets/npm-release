@@ -74,6 +74,17 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
 
+    - name: Remind to update local branch
+      if: ${{ inputs.dry-run != 'true' }}
+      shell: bash
+      run: |
+        printf '::notice title=Update local branch::Run git pull --rebase locally.\n'
+        {
+          printf '### Update local branch\n\n'
+          printf 'Release commit and tag pushed. In your local checkout of `%s`, switch to `%s` and run:\n\n' "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME"
+          printf '```sh\ngit pull --rebase\n```\n'
+        } >> "$GITHUB_STEP_SUMMARY"
+
     - name: Publish to npm
       if: ${{ inputs.dry-run != 'true' && inputs.skip-npm-publish != 'true' }}
       shell: bash
