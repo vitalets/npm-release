@@ -4,9 +4,7 @@
 
 ## [Unreleased]
 
-## [2.3.3] - 2026-10-23
-
-- Document updating the local branch after releases and add a release summary with old and new versions, a GitHub Release link when available, and a reminder to run `git pull --rebase`
+- Document updating the local branch after releases and add a release summary with old and new versions, GitHub and npm release status, and a reminder to run `git pull --rebase`
 
 ## [2.3.2] - 2026-10-23
 

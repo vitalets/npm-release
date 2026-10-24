@@ -77,6 +77,7 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
 
     - name: Publish to npm
+      id: publish-npm
       if: ${{ inputs.dry-run != 'true' && inputs.skip-npm-publish != 'true' }}
       shell: bash
       # --provenance attaches a signed build attestation via OIDC (requires id-token: write).
@@ -106,14 +107,18 @@ runs:
       shell: bash
       env:
         GITHUB_RELEASE_CREATED: ${{ steps.create-github-release.outcome == 'success' }}
+        NPM_RELEASE_CREATED: ${{ steps.publish-npm.outcome == 'success' }}
       run: |
         {
           printf '### Release summary\n\n'
-          printf '| Old version | New version |\n| --- | --- |\n'
-          printf '| `%s` | `%s` |\n\n' "$PREVIOUS_VERSION" "$VERSION"
-          if [[ "$GITHUB_RELEASE_CREATED" == 'true' ]]; then
-            printf '[View GitHub Release](%s/%s/releases/tag/v%s)\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$VERSION"
+          printf 'Old version: %s  \nNew version: %s\n\n' "$PREVIOUS_VERSION" "$VERSION"
+          if [[ "$NPM_RELEASE_CREATED" == 'true' ]]; then
+            printf '%s\n' '- ✅ NPM release created'
           fi
+          if [[ "$GITHUB_RELEASE_CREATED" == 'true' ]]; then
+            printf '%s\n' '- ✅ GitHub release created'
+          fi
+          printf '\n'
           printf 'Update your local branch:\n\n'
           printf '```sh\ngit pull --rebase\n```\n'
         } >> "$GITHUB_STEP_SUMMARY"
