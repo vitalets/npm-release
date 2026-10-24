@@ -112,39 +112,47 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
 
     - name: Release summary
-      if: ${{ !cancelled() && steps.commit-release.outcome == 'success' }}
+      if: ${{ !cancelled() && (steps.commit-release.outcome == 'success' || (inputs.dry-run == 'true' && success())) }}
       shell: bash
       env:
+        DRY_RUN: ${{ inputs.dry-run }}
+        SKIP_NPM_PUBLISH: ${{ inputs.skip-npm-publish }}
+        CHANGELOG_UPDATED: ${{ steps.update-changelog.outcome == 'success' }}
         GITHUB_RELEASE_OUTCOME: ${{ steps.create-github-release.outcome }}
         NPM_RELEASE_OUTCOME: ${{ steps.publish-npm.outcome }}
       run: |
         {
-          printf '### Release summary\n\n'
+          if [[ "$DRY_RUN" == 'true' ]]; then
+            printf '### Release summary (dry run)\n\n'
+            printf 'No changes pushed or published.\n\n'
+          else
+            printf '### Release summary\n\n'
+          fi
           printf 'Old version: %s  \nNew version: %s\n\n' "$PREVIOUS_VERSION" "$VERSION"
-          if [[ "$NPM_RELEASE_OUTCOME" == 'success' ]]; then
+          if [[ "$DRY_RUN" == 'true' && "$SKIP_NPM_PUBLISH" != 'true' ]]; then
+            printf '%s\n' '- NPM release would be created'
+          elif [[ "$NPM_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ NPM release created'
           elif [[ "$NPM_RELEASE_OUTCOME" == 'skipped' ]]; then
             printf '%s\n' '- ⏭️ NPM release skipped'
           fi
-          if [[ "$GITHUB_RELEASE_OUTCOME" == 'success' ]]; then
+          if [[ "$DRY_RUN" == 'true' && "$CHANGELOG_UPDATED" == 'true' ]]; then
+            printf '%s\n' '- GitHub release would be created'
+          elif [[ "$GITHUB_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ GitHub release created'
           elif [[ "$GITHUB_RELEASE_OUTCOME" == 'skipped' ]]; then
             printf '%s\n' '- ⏭️ GitHub release skipped'
           fi
           printf '\n'
-          printf 'Update your local branch:\n\n'
-          printf '```sh\ngit pull --rebase\n```\n'
+          if [[ "$DRY_RUN" == 'true' ]]; then
+            if [[ "$CHANGELOG_UPDATED" == 'true' ]]; then
+              printf '### Release notes\n\n%s\n\n' "$NOTES"
+            fi
+            printf '<details>\n<summary>Release files diff</summary>\n\n```diff\n'
+            git diff --no-color -- package.json package-lock.json CHANGELOG.md
+            printf '```\n\n</details>\n'
+          else
+            printf 'Update your local branch:\n\n'
+            printf '```sh\ngit pull --rebase\n```\n'
+          fi
         } >> "$GITHUB_STEP_SUMMARY"
-
-    - name: Dry run summary
-      if: ${{ inputs.dry-run == 'true' }}
-      shell: bash
-      run: |
-        echo "=== Dry run - no changes pushed or published ==="
-        echo "Version: ${{ env.VERSION }}"
-        echo "--- Release notes ---"
-        echo "$NOTES"
-        echo "--- package.json version ---"
-        npm pkg get version
-        echo "--- Release files diff ---"
-        git diff package.json package-lock.json CHANGELOG.md
