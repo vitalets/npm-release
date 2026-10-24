@@ -39,7 +39,7 @@ Configure [OIDC Trusted Publishing](https://docs.npmjs.com/generating-provenance
 
 ### 3. Add CHANGELOG.md
 
-Your repository must have a `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format with an `## [Unreleased]` section:
+Unless you set `skip-changelog-update: true`, your repository must have a `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format with an `## [Unreleased]` section:
 
 ```markdown
 # Changelog
@@ -89,6 +89,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip-changelog-update:
+        description: Skip changelog update and GitHub release
+        required: false
+        type: boolean
+        default: false
       dry-run:
         description: Dry run
         required: false
@@ -124,6 +129,7 @@ jobs:
           channel:          ${{ inputs.channel }}
           version:          ${{ inputs.version }}
           skip-npm-publish: ${{ inputs.skip-npm-publish }}
+          skip-changelog-update: ${{ inputs.skip-changelog-update }}
           dry-run:          ${{ inputs.dry-run }}
           github-token:     ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -167,6 +173,7 @@ npm install package-name@next
 | `channel` | yes | — | `stable` for a stable release, or an npm prerelease identifier and matching dist-tag such as `next`. Must start with a letter. |
 | `version` | yes | — | Version increment: `patch`, `minor`, or `major`. |
 | `skip-npm-publish` | no | `false` | Skip the `npm publish` step |
+| `skip-changelog-update` | no | `false` | Skip changelog updates and GitHub Release creation. Version bump, commit, tag, push, and npm publishing still run. `CHANGELOG.md` is not required. |
 | `dry-run` | no | `false` | No git push, no npm publish — prints a summary of what would happen |
 | `github-token` | yes | — | Pass `secrets.GITHUB_TOKEN` — used for git push and creating the GitHub Release |
 

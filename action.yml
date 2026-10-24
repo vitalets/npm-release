@@ -16,6 +16,10 @@ inputs:
     description: Skip npm publish step
     required: false
     default: 'false'
+  skip-changelog-update:
+    description: Skip changelog update and GitHub Release creation
+    required: false
+    default: 'false'
   dry-run:
     description: Dry run — no git push, no npm publish. Prints a summary instead.
     required: false
@@ -56,7 +60,8 @@ runs:
     # Skipped for pre-releases: the [Unreleased] section keeps accumulating
     # changes so that the next stable release includes the full changelog.
     - name: Update changelog and extract release notes
-      if: ${{ steps.bump-version.outputs.prerelease != 'true' }}
+      if: ${{ inputs.skip-changelog-update != 'true' && steps.bump-version.outputs.prerelease != 'true' }}
+      id: update-changelog
       shell: bash
       run: |
         NOTES=$(node "$GITHUB_ACTION_PATH/src/changelog.mts" "${{ env.VERSION }}")
@@ -69,11 +74,15 @@ runs:
       if: ${{ inputs.dry-run != 'true' }}
       shell: bash
       run: |
-        git add package.json package-lock.json CHANGELOG.md
+        git add package.json package-lock.json
+        if [[ "$CHANGELOG_UPDATED" == 'true' ]]; then
+          git add CHANGELOG.md
+        fi
         git commit --no-verify -m "v${{ env.VERSION }}"
         git tag "v${{ env.VERSION }}"
         git push --no-verify origin HEAD --tags
       env:
+        CHANGELOG_UPDATED: ${{ steps.update-changelog.outcome == 'success' }}
         GH_TOKEN: ${{ inputs.github-token }}
 
     - name: Publish to npm
@@ -96,7 +105,7 @@ runs:
     # versions to keep the release list clean.
     - name: Create GitHub Release
       id: create-github-release
-      if: ${{ inputs.dry-run != 'true' && steps.bump-version.outputs.prerelease != 'true' }}
+      if: ${{ inputs.dry-run != 'true' && inputs.skip-changelog-update != 'true' && steps.bump-version.outputs.prerelease != 'true' }}
       shell: bash
       run: echo "$NOTES" | gh release create "v${{ env.VERSION }}" --title "v${{ env.VERSION }}" --notes-file -
       env:
@@ -106,17 +115,21 @@ runs:
       if: ${{ !cancelled() && steps.commit-release.outcome == 'success' }}
       shell: bash
       env:
-        GITHUB_RELEASE_CREATED: ${{ steps.create-github-release.outcome == 'success' }}
-        NPM_RELEASE_CREATED: ${{ steps.publish-npm.outcome == 'success' }}
+        GITHUB_RELEASE_OUTCOME: ${{ steps.create-github-release.outcome }}
+        NPM_RELEASE_OUTCOME: ${{ steps.publish-npm.outcome }}
       run: |
         {
           printf '### Release summary\n\n'
           printf 'Old version: %s  \nNew version: %s\n\n' "$PREVIOUS_VERSION" "$VERSION"
-          if [[ "$NPM_RELEASE_CREATED" == 'true' ]]; then
+          if [[ "$NPM_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ NPM release created'
+          elif [[ "$NPM_RELEASE_OUTCOME" == 'skipped' ]]; then
+            printf '%s\n' '- ⏭️ NPM release skipped'
           fi
-          if [[ "$GITHUB_RELEASE_CREATED" == 'true' ]]; then
+          if [[ "$GITHUB_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ GitHub release created'
+          elif [[ "$GITHUB_RELEASE_OUTCOME" == 'skipped' ]]; then
+            printf '%s\n' '- ⏭️ GitHub release skipped'
           fi
           printf '\n'
           printf 'Update your local branch:\n\n'

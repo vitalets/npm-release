@@ -27,6 +27,11 @@ on:
         required: false
         type: boolean
         default: false
+      skip-changelog-update:
+        description: Skip changelog update and GitHub release
+        required: false
+        type: boolean
+        default: false
       dry-run:
         description: Dry run
         required: false
@@ -62,5 +67,6 @@ jobs:
           channel:          ${{ inputs.channel }}
           version:          ${{ inputs.version }}
           skip-npm-publish: ${{ inputs.skip-npm-publish }}
+          skip-changelog-update: ${{ inputs.skip-changelog-update }}
           dry-run:          ${{ inputs.dry-run }}
           github-token:     ${{ secrets.GITHUB_TOKEN }}
