@@ -90,7 +90,7 @@ on:
         type: boolean
         default: false
       skip-changelog-update:
-        description: Skip changelog update and GitHub release
+        description: Skip Changelog and GitHub release
         required: false
         type: boolean
         default: false
