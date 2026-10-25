@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Place the dry-run checkbox immediately after Version, before the other checkboxes, in release workflows and the documented example
+
 - Bold version values and mark planned releases with ✔️ in dry-run summaries
 
 - Move dry-run details into the release summary, with planned release statuses, release notes, and a collapsible file diff instead of the local branch update command

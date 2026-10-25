@@ -84,6 +84,11 @@ on:
           - patch
           - minor
           - major
+      dry-run:
+        description: Dry run
+        required: false
+        type: boolean
+        default: false
       skip-npm-publish:
         description: Skip NPM publish
         required: false
@@ -91,11 +96,6 @@ on:
         default: false
       skip-changelog-update:
         description: Skip Changelog and GitHub release
-        required: false
-        type: boolean
-        default: false
-      dry-run:
-        description: Dry run
         required: false
         type: boolean
         default: false
