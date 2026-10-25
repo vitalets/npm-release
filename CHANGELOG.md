@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.4] - 2026-10-25
+
 - Place the dry-run checkbox immediately after Version, before the other checkboxes, in release workflows and the documented example
 
 - Bold version values and mark planned releases with ✔️ in dry-run summaries
@@ -69,7 +71,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.3...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.4...HEAD
+[2.3.4]: https://github.com/vitalets/npm-release/compare/v2.3.3...v2.3.4
 [2.3.3]: https://github.com/vitalets/npm-release/compare/v2.3.2...v2.3.3
 [2.3.2]: https://github.com/vitalets/npm-release/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/vitalets/npm-release/compare/v2.3.0...v2.3.1
