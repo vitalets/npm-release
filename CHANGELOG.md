@@ -8,7 +8,7 @@
 
 - Bold version values and mark planned releases with ✔️ in dry-run summaries
 
-- Move dry-run details into the release summary, with planned release statuses, release notes, and a collapsible file diff instead of the local branch update command
+- Show collapsible release notes and file diffs in both dry-run and normal release summaries, with local branch update instructions above them for normal releases
 
 - Show skipped npm and GitHub releases with ✖️ bullets in the release summary
 

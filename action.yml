@@ -144,15 +144,18 @@ runs:
             printf '%s\n' '- ✖️ GitHub release skipped'
           fi
           printf '\n'
-          if [[ "$DRY_RUN" == 'true' ]]; then
-            if [[ "$CHANGELOG_UPDATED" == 'true' ]]; then
-              printf '### Release notes\n\n%s\n\n' "$NOTES"
-            fi
-            printf '<details>\n<summary>Release files diff</summary>\n\n```diff\n'
-            git diff --no-color -- package.json package-lock.json CHANGELOG.md
-            printf '```\n\n</details>\n'
-          else
+          if [[ "$DRY_RUN" != 'true' ]]; then
             printf 'Update your local branch:\n\n'
-            printf '```sh\ngit pull --rebase\n```\n'
+            printf '```sh\ngit pull --rebase\n```\n\n'
           fi
+          if [[ "$CHANGELOG_UPDATED" == 'true' ]]; then
+            printf '<details>\n<summary>Release notes</summary>\n\n%s\n\n</details>\n\n' "$NOTES"
+          fi
+          printf '<details>\n<summary>Release files diff</summary>\n\n```diff\n'
+          if [[ "$DRY_RUN" == 'true' ]]; then
+            git diff --no-color -- package.json package-lock.json CHANGELOG.md
+          else
+            git show --format= --no-color HEAD -- package.json package-lock.json CHANGELOG.md
+          fi
+          printf '```\n\n</details>\n'
         } >> "$GITHUB_STEP_SUMMARY"
