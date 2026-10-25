@@ -134,14 +134,14 @@ runs:
           elif [[ "$NPM_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ NPM release created'
           elif [[ "$NPM_RELEASE_OUTCOME" == 'skipped' ]]; then
-            printf '%s\n' '- ⏭️ NPM release skipped'
+            printf '%s\n' '- ✖️ NPM release skipped'
           fi
           if [[ "$DRY_RUN" == 'true' && "$CHANGELOG_UPDATED" == 'true' ]]; then
             printf '%s\n' '- ✔️ GitHub release would be created'
           elif [[ "$GITHUB_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ GitHub release created'
           elif [[ "$GITHUB_RELEASE_OUTCOME" == 'skipped' ]]; then
-            printf '%s\n' '- ⏭️ GitHub release skipped'
+            printf '%s\n' '- ✖️ GitHub release skipped'
           fi
           printf '\n'
           if [[ "$DRY_RUN" == 'true' ]]; then

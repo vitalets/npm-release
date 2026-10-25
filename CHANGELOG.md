@@ -8,7 +8,7 @@
 
 - Move dry-run details into the release summary, with planned release statuses, release notes, and a collapsible file diff instead of the local branch update command
 
-- Show skipped npm and GitHub releases with ⏭️ bullets in the release summary
+- Show skipped npm and GitHub releases with ✖️ bullets in the release summary
 
 - Add `skip-changelog-update` to skip changelog updates and GitHub Release creation while retaining versioning and npm publishing
 
