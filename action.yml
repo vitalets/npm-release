@@ -124,20 +124,20 @@ runs:
         {
           if [[ "$DRY_RUN" == 'true' ]]; then
             printf '### Release summary (dry run)\n\n'
-            printf 'No changes pushed or published.\n\n'
+            printf '❗️ No changes pushed or published.\n\n'
           else
             printf '### Release summary\n\n'
           fi
-          printf 'Old version: %s  \nNew version: %s\n\n' "$PREVIOUS_VERSION" "$VERSION"
+          printf 'Old version: **%s**  \nNew version: **%s**\n\n' "$PREVIOUS_VERSION" "$VERSION"
           if [[ "$DRY_RUN" == 'true' && "$SKIP_NPM_PUBLISH" != 'true' ]]; then
-            printf '%s\n' '- NPM release would be created'
+            printf '%s\n' '- ✔️ NPM release would be created'
           elif [[ "$NPM_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ NPM release created'
           elif [[ "$NPM_RELEASE_OUTCOME" == 'skipped' ]]; then
             printf '%s\n' '- ⏭️ NPM release skipped'
           fi
           if [[ "$DRY_RUN" == 'true' && "$CHANGELOG_UPDATED" == 'true' ]]; then
-            printf '%s\n' '- GitHub release would be created'
+            printf '%s\n' '- ✔️ GitHub release would be created'
           elif [[ "$GITHUB_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ GitHub release created'
           elif [[ "$GITHUB_RELEASE_OUTCOME" == 'skipped' ]]; then

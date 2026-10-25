@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Bold version values and mark planned releases with ✔️ in dry-run summaries
+
 - Move dry-run details into the release summary, with planned release statuses, release notes, and a collapsible file diff instead of the local branch update command
 
 - Show skipped npm and GitHub releases with ⏭️ bullets in the release summary
