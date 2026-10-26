@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Include the repository name in bold in the release summary's local branch update reminder
+
 ## [2.3.4] - 2026-10-25
 
 - Place the dry-run checkbox immediately after Version, before the other checkboxes, in release workflows and the documented example

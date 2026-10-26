@@ -145,7 +145,7 @@ runs:
           fi
           printf '\n'
           if [[ "$DRY_RUN" != 'true' ]]; then
-            printf 'Update your local branch:\n\n'
+            printf 'Update your local branch in the **%s** project:\n\n' "${GITHUB_REPOSITORY##*/}"
             printf '```sh\ngit pull --rebase\n```\n\n'
           fi
           if [[ "$CHANGELOG_UPDATED" == 'true' ]]; then
