@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Improve the extension with duplicate release warnings, Changelog and Diff links for valid selections, and clearer channel prompts and version validation messages
+
 ## [2.3.5] - 2026-10-26
 
 - Include the repository name in bold in the release summary's local branch update reminder

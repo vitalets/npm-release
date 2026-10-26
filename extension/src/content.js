@@ -99,11 +99,9 @@
 
   function assertNotLowerRelease(currentVersion, currentLine, channel, release) {
     if (currentLine === undefined || RELEASE_RANK[release] >= RELEASE_RANK[currentLine]) return;
-    const requestedOperation = channel === 'stable' ? release : `${channel}-${release}`;
-    throw new Error(
-      `Cannot use ${requestedOperation} from ${currentVersion}: ` +
-        `lower operations are not permitted while on a ${currentLine} prerelease line`,
-    );
+    const available = RELEASE_OPERATIONS.filter((operation) => RELEASE_RANK[operation] >= RELEASE_RANK[currentLine]);
+    const verb = channel === 'stable' ? 'release' : 'pre-release';
+    throw new Error(`Can't ${verb} ${release} on ${currentVersion}: already on a ${currentLine} pre-release. Select version: ${available.join(' or ')}.`);
   }
 
   function incrementStable(version, release) {
@@ -248,6 +246,112 @@
     return `/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.repository)}/raw/refs/${ref.type}/${encodePath(ref.name)}/package.json`;
   }
 
+  function releaseLinks(repository, ref, version) {
+    const base = `/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.repository)}`;
+    const name = ref.name.split('/').map(encodeURIComponent).join('/');
+    const fullRef = `refs/${ref.type}/${name}`;
+    return {
+      changelog: `${base}/blob/${fullRef}/CHANGELOG.md#unreleased`,
+      head: `${base}/tree/${fullRef}`,
+      tag: `${base}/tree/refs/tags/${encodeURIComponent(`v${version}`)}`,
+      compare: `${base}/compare/${encodeURIComponent(`v${version}`)}...${fullRef}`,
+    };
+  }
+
+  function commitFromPage(html) {
+    function readOid(data) {
+      const payload = data?.payload ?? data;
+      const routes = [payload?.codeViewTreeRoute, payload?.codeViewRepoRoute, payload];
+      for (const route of routes) {
+        const oid = route?.refInfo?.currentOid;
+        if (typeof oid === 'string' && /^[a-f0-9]{40}$/i.test(oid)) return oid.toLowerCase();
+      }
+    }
+    // GitHub may return route JSON instead of a complete HTML document.
+    try {
+      const oid = readOid(JSON.parse(html));
+      if (oid) return oid;
+    } catch { /* Read embedded route data below. */ }
+    for (const match of html.matchAll(/<script\b[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+      try {
+        const oid = readOid(JSON.parse(match[1]));
+        if (oid) return oid;
+      } catch { /* Ignore unrelated or malformed script data. */ }
+    }
+    throw new Error('GitHub commit metadata unavailable');
+  }
+
+  async function checkReleaseCommit(fetchImplementation, links, signal) {
+    try {
+      const commits = await Promise.all([links.head, links.tag].map(async (url) => {
+        const response = await fetchImplementation(url, {
+          credentials: 'same-origin', cache: 'no-store', signal,
+          headers: { Accept: 'text/html' },
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        try {
+          return commitFromPage(await response.text());
+        } catch (error) {
+          log('warn', 'Commit metadata unavailable', { url, contentType: response.headers.get('content-type') });
+          throw error;
+        }
+      }));
+      return { status: commits[0] === commits[1] ? 'same' : 'different' };
+    } catch (error) {
+      // Some signed-in GitHub page variants omit the ref metadata. The comparison
+      // page explicitly identifies equal refs, without confusing an empty file diff
+      // (which can still contain commits) with identical commits.
+      if (links.compare && !signal?.aborted) {
+        try {
+          const response = await fetchImplementation(links.compare, {
+            credentials: 'same-origin', cache: 'no-store', signal,
+            headers: { Accept: 'text/html' },
+          });
+          if (response.ok && identicalComparison(await response.text())) return { status: 'same' };
+        } catch { /* Leave failed or ambiguous checks hidden. */ }
+      }
+      return { status: 'unknown', message: error instanceof Error ? error.message : String(error) };
+    }
+  }
+
+  function identicalComparison(html) {
+    return /<h3\b[^>]*>\s*There (?:isn’t|isn't|isn&#39;t) anything to compare\.\s*<\/h3>/.test(html) &&
+      /<\/strong>\s+are identical\./.test(html);
+  }
+
+  function setVersionMessage(element, message, version) {
+    element.textContent = '';
+    const parts = version ? message.split(version) : [message];
+    let selectingOptions = false;
+    parts.forEach((part, index) => {
+      if (index > 0) {
+        const strong = document.createElement('strong');
+        strong.textContent = version;
+        element.append(strong);
+      }
+      for (const token of part.split(/(Select version:|\b(?:patch|minor|major)\b)/)) {
+        if (token === 'Select version:') selectingOptions = true;
+        if (selectingOptions && RELEASE_OPERATIONS.includes(token)) {
+          const strong = document.createElement('strong');
+          strong.textContent = token;
+          element.append(strong);
+        } else {
+          element.append(token);
+        }
+      }
+    });
+  }
+
+  function createLink(text) {
+    const link = document.createElement('a');
+    link.textContent = text;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.setAttribute('aria-label', `${text} (opens in a new tab)`);
+    link.append(' ↗');
+    return link;
+  }
+
   function createRow(label) {
     const row = document.createElement('div');
     row.className = `${PREVIEW_CLASS}__row`;
@@ -301,7 +405,7 @@
     }
 
     if (existing && existing.channel === channel && existing.version === version && existing.panel.isConnected) {
-      existing.update(rawPackageUrl(repository, ref));
+      existing.update(repository, ref);
       return;
     }
     existing?.dispose();
@@ -319,19 +423,46 @@
     panel.setAttribute('aria-live', 'polite');
     const currentRow = createRow('Cur version');
     const nextRow = createRow('New version');
-    panel.append(currentRow.row, nextRow.row);
+    const messageRow = document.createElement('div');
+    messageRow.className = `${PREVIEW_CLASS}__message`;
+    const commitMessage = document.createElement('div');
+    commitMessage.className = `${PREVIEW_CLASS}__message`;
+    const commitsRow = { row: commitMessage, value: commitMessage };
+    const linksRow = document.createElement('div');
+    linksRow.className = `${PREVIEW_CLASS}__links`;
+    const changelogLink = createLink('Changelog');
+    const compareLink = createLink('Diff');
+    linksRow.append(changelogLink, compareLink);
+    panel.append(currentRow.row, nextRow.row, messageRow, commitsRow.row, linksRow);
     versionGroup.after(panel);
 
     let currentVersion;
+    let packageError;
+    let commitStatus;
     const render = () => {
-      nextRow.value.classList.remove(`${PREVIEW_CLASS}__value--error`);
+      nextRow.value.textContent = '-';
+      nextRow.value.classList.toggle(`${PREVIEW_CLASS}__value--prompt`, !channel.value);
+      linksRow.hidden = true;
+      commitsRow.row.hidden = true;
+      messageRow.hidden = false;
+      messageRow.textContent = '';
+      messageRow.classList.remove(`${PREVIEW_CLASS}__value--error`);
+      if (!channel.value) {
+        nextRow.value.textContent = 'Select channel';
+        messageRow.hidden = true;
+        return;
+      }
       if (!currentVersion) {
-        nextRow.value.textContent = '—';
+        messageRow.textContent = packageError || 'Loading…';
+        messageRow.classList.toggle(`${PREVIEW_CLASS}__value--error`, Boolean(packageError));
         return;
       }
       try {
         const nextVersion = calculateNextVersion(currentVersion, channel.value, version.value);
         nextRow.value.textContent = nextVersion;
+        messageRow.hidden = true;
+        linksRow.hidden = false;
+        commitsRow.row.hidden = !['same', 'different'].includes(commitStatus);
         log('debug', 'Version preview calculated', {
           currentVersion,
           channel: channel.value,
@@ -340,8 +471,8 @@
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        nextRow.value.textContent = message;
-        nextRow.value.classList.add(`${PREVIEW_CLASS}__value--error`);
+        setVersionMessage(messageRow, message, currentVersion);
+        messageRow.classList.add(`${PREVIEW_CLASS}__value--error`);
         log('warn', 'Could not calculate version preview', {
           currentVersion,
           channel: channel.value,
@@ -355,35 +486,70 @@
     version.addEventListener('change', render);
 
     let loadedUrl;
-    const update = (url) => {
+    let checkController;
+    let generation = 0;
+    const update = (repository, ref) => {
+      const url = rawPackageUrl(repository, ref);
       if (loadedUrl === url) return;
       loadedUrl = url;
+      const currentGeneration = ++generation;
+      checkController?.abort();
+      checkController = new AbortController();
+      const signal = checkController.signal;
+      changelogLink.href = releaseLinks(repository, ref).changelog;
+      compareLink.hidden = true;
+      commitsRow.row.hidden = true;
+      commitsRow.value.textContent = '';
+      commitsRow.value.classList.remove(`${PREVIEW_CLASS}__value--error`);
       currentVersion = undefined;
+      packageError = undefined;
+      commitStatus = undefined;
       currentRow.value.textContent = 'Loading…';
       currentRow.value.classList.remove(`${PREVIEW_CLASS}__value--error`);
       render();
       void loader(url).then((result) => {
-        if (result.status === 'stale' || !panel.isConnected || loadedUrl !== url) return;
+        if (result.status === 'stale' || !panel.isConnected || currentGeneration !== generation) return;
         if (result.status === 'error') {
-          currentRow.value.textContent = `Unavailable (${result.message})`;
-          currentRow.value.classList.add(`${PREVIEW_CLASS}__value--error`);
+          commitsRow.row.hidden = true;
+          currentRow.value.textContent = '-';
+          packageError = `Unavailable (${result.message})`;
+          render();
           return;
         }
         currentVersion = result.version;
         currentRow.value.textContent = currentVersion;
         render();
+        const links = releaseLinks(repository, ref, currentVersion);
+        compareLink.href = links.compare;
+        compareLink.hidden = false;
+        void checkReleaseCommit(fetch, links, signal).then((check) => {
+          if (signal.aborted || !panel.isConnected || currentGeneration !== generation) return;
+          commitStatus = check.status;
+          if (check.status === 'same') {
+            setVersionMessage(commitsRow.value, `No new commits since release v${result.version}.`, `v${result.version}`);
+            commitsRow.value.classList.add(`${PREVIEW_CLASS}__value--error`);
+          } else if (check.status === 'different') {
+            commitsRow.value.textContent = 'Changes detected';
+          } else {
+            commitsRow.value.textContent = '';
+            log('debug', 'Release commit check unavailable', { message: check.message });
+          }
+          render();
+
+        });
       });
     };
     formPreviews.set(form, {
       channel, version, panel, update,
       dispose() {
+        checkController?.abort();
         formPreviews.delete(form);
         channel.removeEventListener('change', render);
         version.removeEventListener('change', render);
         panel.remove();
       },
     });
-    update(packageUrl);
+    update(repository, ref);
   }
 
   function start() {
@@ -427,6 +593,10 @@
   // Kept on the isolated content-script global so the zero-build script can be unit tested.
   globalThis.__npmReleasePreview = {
     calculateNextVersion,
+    releaseLinks,
+    commitFromPage,
+    identicalComparison,
+    checkReleaseCommit,
     createPackageVersionLoader,
     hasExpectedVersionOperations,
     selectedRef,

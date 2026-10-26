@@ -32,3 +32,26 @@
   font-family: inherit;
   font-weight: 400;
 }
+
+.npm-release-preview[hidden],
+.npm-release-preview [hidden] {
+  display: none;
+}
+
+.npm-release-preview__links {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.npm-release-preview__message {
+  grid-column: 1 / -1;
+  overflow-wrap: anywhere;
+}
+
+.npm-release-preview__value--prompt {
+  color: var(--fgColor-accent, var(--color-accent-fg, #0969da));
+  font-family: inherit;
+  font-weight: 600;
+}
