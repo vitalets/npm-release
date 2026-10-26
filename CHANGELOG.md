@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.7] - 2026-10-26
+
 - Explain when releases are skipped because of a dry-run or GitHub Release creation is skipped because of a pre-release in the release summary
 
 ## [2.3.6] - 2026-10-26
@@ -81,7 +83,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.6...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.7...HEAD
+[2.3.7]: https://github.com/vitalets/npm-release/compare/v2.3.6...v2.3.7
 [2.3.6]: https://github.com/vitalets/npm-release/compare/v2.3.5...v2.3.6
 [2.3.5]: https://github.com/vitalets/npm-release/compare/v2.3.4...v2.3.5
 [2.3.4]: https://github.com/vitalets/npm-release/compare/v2.3.3...v2.3.4
