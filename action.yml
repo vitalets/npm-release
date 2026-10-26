@@ -117,6 +117,7 @@ runs:
       env:
         DRY_RUN: ${{ inputs.dry-run }}
         SKIP_NPM_PUBLISH: ${{ inputs.skip-npm-publish }}
+        PRERELEASE: ${{ steps.bump-version.outputs.prerelease }}
         CHANGELOG_UPDATED: ${{ steps.update-changelog.outcome == 'success' }}
         GITHUB_RELEASE_OUTCOME: ${{ steps.create-github-release.outcome }}
         NPM_RELEASE_OUTCOME: ${{ steps.publish-npm.outcome }}
@@ -130,18 +131,22 @@ runs:
           fi
           printf 'Old version: **%s**  \nNew version: **%s**\n\n' "$PREVIOUS_VERSION" "$VERSION"
           if [[ "$DRY_RUN" == 'true' && "$SKIP_NPM_PUBLISH" != 'true' ]]; then
-            printf '%s\n' '- ✔️ NPM release would be created'
+            printf '%s\n' '- ✖️ NPM release skipped (dry-run)'
           elif [[ "$NPM_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ NPM release created'
           elif [[ "$NPM_RELEASE_OUTCOME" == 'skipped' ]]; then
             printf '%s\n' '- ✖️ NPM release skipped'
           fi
           if [[ "$DRY_RUN" == 'true' && "$CHANGELOG_UPDATED" == 'true' ]]; then
-            printf '%s\n' '- ✔️ GitHub release would be created'
+            printf '%s\n' '- ✖️ GitHub release skipped (dry-run)'
           elif [[ "$GITHUB_RELEASE_OUTCOME" == 'success' ]]; then
             printf '%s\n' '- ✅ GitHub release created'
           elif [[ "$GITHUB_RELEASE_OUTCOME" == 'skipped' ]]; then
-            printf '%s\n' '- ✖️ GitHub release skipped'
+            if [[ "$PRERELEASE" == 'true' ]]; then
+              printf '%s\n' '- ✖️ GitHub release skipped (pre-release)'
+            else
+              printf '%s\n' '- ✖️ GitHub release skipped'
+            fi
           fi
           printf '\n'
           if [[ "$DRY_RUN" != 'true' ]]; then

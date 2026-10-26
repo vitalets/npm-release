@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Explain when releases are skipped because of a dry-run or GitHub Release creation is skipped because of a pre-release in the release summary
+
 ## [2.3.6] - 2026-10-26
 
 - Improve the extension with duplicate release warnings, Changelog and Diff links for valid selections, and clearer channel prompts and version validation messages
