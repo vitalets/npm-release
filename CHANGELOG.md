@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.5] - 2026-10-26
+
 - Include the repository name in bold in the release summary's local branch update reminder
 
 ## [2.3.4] - 2026-10-25
@@ -73,7 +75,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.4...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.5...HEAD
+[2.3.5]: https://github.com/vitalets/npm-release/compare/v2.3.4...v2.3.5
 [2.3.4]: https://github.com/vitalets/npm-release/compare/v2.3.3...v2.3.4
 [2.3.3]: https://github.com/vitalets/npm-release/compare/v2.3.2...v2.3.3
 [2.3.2]: https://github.com/vitalets/npm-release/compare/v2.3.1...v2.3.2
