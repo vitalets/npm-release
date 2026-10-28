@@ -20,6 +20,7 @@ interface PreviewApi {
   >;
   hasExpectedVersionOperations(values: string[]): boolean;
   selectedRef(root: {
+    querySelectorAll(selector: string): unknown[];
     querySelector(selector: string):
       | undefined
       | {
@@ -144,6 +145,7 @@ describe('Extension form detection', () => {
         selector === '[data-menu-button]' ? menuButton : undefined,
     };
     const dispatch = {
+      querySelectorAll: () => [],
       querySelector: (selector: string) =>
         selector === '.branch-selection summary' ? summary : undefined,
     };
@@ -153,6 +155,32 @@ describe('Extension form detection', () => {
       JSON.stringify({ name: 'main', type: 'heads' }),
     );
   });
+
+  for (const type of ['heads', 'tags']) {
+    test(`reads ${type} from the label-associated workflow picker`, () => {
+      const picker = {
+        matches: (selector: string) => selector === 'button',
+        querySelector: (selector: string) => {
+          if (selector === '[data-component="text"]') return { textContent: ' release/test ' };
+          if (selector === (type === 'tags' ? '.octicon-tag' : '.octicon-git-branch')) return {};
+          return undefined;
+        },
+      };
+      const dispatch = {
+        querySelectorAll: (selector: string) => selector === 'label[for]' ? [
+          { textContent: 'Unrelated label' },
+          { textContent: ' Use workflow from: ', control: picker },
+        ] : [],
+        contains: (element: unknown) => element === picker,
+        querySelector: () => undefined,
+      };
+
+      assert.equal(
+        JSON.stringify(preview.selectedRef(dispatch)),
+        JSON.stringify({ name: 'release/test', type }),
+      );
+    });
+  }
 });
 
 describe('Package version loading', () => {
@@ -338,7 +366,7 @@ test('commit result stays hidden until selection is valid, including after async
   version.options = ['patch', 'minor', 'major'].map(value => ({ value }));
   let panel: Element;
   version.closest = () => ({ after(node: Element) { panel = node; } });
-  const dispatch = { querySelector: (selector: string) => selector === '.branch-selection summary' ? {
+  const dispatch = { querySelectorAll: () => [], querySelector: (selector: string) => selector === '.branch-selection summary' ? {
     textContent: 'Branch: main', querySelector: () => ({ textContent: 'main' }),
   } : undefined };
   const form = {
