@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.10] - 2026-10-28
+
 ## [2.3.9] - 2026-10-28
 
 ## [2.3.8] - 2026-10-28
@@ -89,7 +91,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.9...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.10...HEAD
+[2.3.10]: https://github.com/vitalets/npm-release/compare/v2.3.9...v2.3.10
 [2.3.9]: https://github.com/vitalets/npm-release/compare/v2.3.8...v2.3.9
 [2.3.8]: https://github.com/vitalets/npm-release/compare/v2.3.7...v2.3.8
 [2.3.7]: https://github.com/vitalets/npm-release/compare/v2.3.6...v2.3.7
