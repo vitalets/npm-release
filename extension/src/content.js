@@ -222,18 +222,33 @@
   }
 
   function selectedRef(root) {
-    const picker = root?.querySelector('button[data-icv-name="Switch branches/tags"]');
-    if (picker) {
-      const name = picker.querySelector('[data-component="text"]')?.textContent?.trim();
-      if (!name) return undefined;
-      if (picker.querySelector('.octicon-tag')) return { name, type: 'tags' };
-      if (picker.querySelector('.octicon-git-branch')) return { name, type: 'heads' };
-      return undefined;
+    if (!root) return undefined;
+    // Follow the label association first: generated IDs and tracking attributes
+    // can change without changing the meaning of the control.
+    const label = [...root.querySelectorAll('label[for]')].find(
+      (label) => /^Use workflow from\s*:?$/i.test(label.textContent?.trim() ?? ''),
+    );
+    const labeledPicker = label?.control;
+    const candidates = [
+      labeledPicker?.matches('button') && root.contains(labeledPicker) ? labeledPicker : null,
+      root.querySelector('button[id^="ref-picker-"]'),
+      root.querySelector('button[data-icv-name="Switch branches/tags"]'),
+    ];
+    for (const picker of new Set(candidates)) {
+      if (!picker) continue;
+      const name = picker.querySelector('[data-component="text"]')?.textContent?.trim() ||
+        picker.getAttribute('aria-label')?.match(/^Use workflow from:\s*(.+)$/i)?.[1]?.trim();
+      if (!name) continue;
+      const isTag = Boolean(picker.querySelector('.octicon-tag'));
+      const isBranch = Boolean(picker.querySelector('.octicon-git-branch'));
+      if (isTag !== isBranch) return { name, type: isTag ? 'tags' : 'heads' };
     }
-    const summary = root?.querySelector('.branch-selection summary');
+    const summary = root.querySelector('.branch-selection summary');
     const name = summary?.querySelector('[data-menu-button]')?.textContent?.trim();
     if (!name) return undefined;
-    return { name, type: summary.textContent?.includes('Tag:') ? 'tags' : 'heads' };
+    if (/\bTag\s*:/.test(summary.textContent)) return { name, type: 'tags' };
+    if (/\bBranch\s*:/.test(summary.textContent)) return { name, type: 'heads' };
+    return undefined;
   }
 
   function repositoryFromLocation() {
@@ -585,7 +600,7 @@
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['aria-busy'],
+      attributeFilter: ['aria-busy', 'aria-label'],
     });
     scan();
   }

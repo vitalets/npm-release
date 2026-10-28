@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Fix extension ref detection for GitHub's updated workflow picker, preferring its label association with fallbacks for older markup.
+
 ## [2.3.7] - 2026-10-26
 
 - Explain when releases are skipped because of a dry-run or GitHub Release creation is skipped because of a pre-release in the release summary
