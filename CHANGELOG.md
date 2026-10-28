@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.3.9] - 2026-10-28
+
 ## [2.3.8] - 2026-10-28
 
 - Fix extension ref detection for GitHub's updated workflow picker, preferring its label association with fallbacks for older markup.
@@ -87,7 +89,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.8...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.3.9...HEAD
+[2.3.9]: https://github.com/vitalets/npm-release/compare/v2.3.8...v2.3.9
 [2.3.8]: https://github.com/vitalets/npm-release/compare/v2.3.7...v2.3.8
 [2.3.7]: https://github.com/vitalets/npm-release/compare/v2.3.6...v2.3.7
 [2.3.6]: https://github.com/vitalets/npm-release/compare/v2.3.5...v2.3.6
