@@ -1,6 +1,6 @@
 {
   "name": "npm-release",
-  "version": "2.3.10",
+  "version": "2.4.0",
   "private": true,
   "description": "GitHub composite action for full npm package releases via OIDC trusted publishing",
   "type": "module",
