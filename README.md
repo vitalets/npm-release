@@ -166,6 +166,26 @@ Selecting any non-`stable` channel (e.g. `next`, `alpha`, `beta`, `rc`, etc) cre
 npm install package-name@next
 ```
 
+## Check other workflow runs before release
+
+Some repositories have heavy workflows, such as tests running on multiple platforms. Before a release, it can be acceptable to reuse the results of those runs instead of running the same checks again in the release workflow.
+
+To use this pattern, add `actions: read` to the release job's existing `permissions` and add the following step after checkout and before `vitalets/npm-release`. Adjust the workflow filenames to match your repository:
+
+```yaml
+      - name: Ensure test workflow passed
+        run: |
+          gh run list --workflow=test.yml --branch="${{ github.ref_name }}" --limit=1 --json conclusion --jq '.[0].conclusion' | grep -qx "success" || (echo "test.yml workflow must pass before publishing" && exit 1)
+          # ...add checks for other workflows here
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+This checks the latest run of each workflow on the selected branch. The release stops if any of these runs is missing, still running, or has not succeeded.
+
+> [!IMPORTANT]
+> The latest workflow run on a branch may belong to a different commit than the commit being released. These checks confirm branch-level results only; they do not guarantee that the code you are releasing passed those workflows. Keep this in mind when deciding whether reusing earlier results is sufficient for your release process.
+
 ## Action Inputs
 
 | Input | Required | Default | Description |
