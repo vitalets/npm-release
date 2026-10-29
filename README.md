@@ -176,7 +176,7 @@ To use this pattern, add `actions: read` to the release job's existing `permissi
       - name: Ensure test workflow passed
         run: |
           gh run list --workflow=test.yml --branch="${{ github.ref_name }}" --limit=1 --json conclusion --jq '.[0].conclusion' | grep -qx "success" || (echo "test.yml workflow must pass before publishing" && exit 1)
-          # ...add checks for other workflows here
+          # ...
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
