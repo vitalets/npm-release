@@ -1,161 +1,149 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import * as git from '../src/cli/git.ts';
 import { updateLocal } from '../src/cli/local-update.ts';
+import { createScenario, createGitRepository } from './helpers/local-update.ts';
 
 const target = { repo: 'owner/package', host: 'github.com', branch: 'main', dryRun: false };
 
-function createScenario() {
-  const calls: string[] = [];
-  const messages: string[] = [];
-  const helpers = {
-    getCurrentBranch: () => 'main',
-    isWorktreeClean: () => true,
-    hasOperationInProgress: () => false,
-    getUpstream: (): ReturnType<typeof git.getUpstream> => ({ remote: 'origin', remoteRef: 'refs/heads/main', ref: 'refs/remotes/origin/main' }),
-    getRemoteUrl: () => 'git@github.com:owner/package.git',
-    fetchRemote: async () => { calls.push('fetch'); },
-    getAheadBehind: () => ({ ahead: 0, behind: 1 }),
-    pullRebase: async () => { calls.push('pull'); },
-  };
-  const log = (message: string) => { messages.push(message); };
-  return { helpers, calls, messages, log };
-}
-
 test('clean matching branch is fetched and pulled', async () => {
-  const s = createScenario();
-  await updateLocal(target, s.log, s.helpers);
-  assert.deepEqual(s.calls, ['fetch', 'pull']);
-  assert.ok(s.messages.includes('✔ Local branch updated.'));
+  const scenario = createScenario();
+  await updateLocal(target, scenario.log, scenario.helpers);
+  assert.deepEqual(scenario.calls, ['fetch', 'pull']);
+  assert.ok(scenario.messages.includes('✔ Local branch updated.'));
 });
 
-test('already up to date skips pulling; local-only commits skip rebasing', async () => {
-  for (const counts of [{ ahead: 0, behind: 0 }, { ahead: 1, behind: 0 }, { ahead: 1, behind: 1 }]) {
-    const s = createScenario();
-    s.helpers.getAheadBehind = () => counts;
-    await updateLocal(target, s.log, s.helpers);
-    assert.deepEqual(s.calls, ['fetch']);
-    assert.match(s.messages.join('\n'), counts.ahead ? /local-only commits/ : /Already up to date/);
-  }
+test('an up-to-date branch skips pulling', async () => {
+  await assertPullSkipped({ ahead: 0, behind: 0 }, /Already up to date/);
+});
+
+test('local-only commits prevent rebasing', async () => {
+  await assertPullSkipped({ ahead: 1, behind: 0 }, /local-only commits/);
+  await assertPullSkipped({ ahead: 1, behind: 1 }, /local-only commits/);
 });
 
 test('dry runs do not inspect or modify Git', async () => {
-  const s = createScenario();
-  s.helpers.getCurrentBranch = () => { throw new Error('must not inspect'); };
-  await updateLocal({ ...target, dryRun: true }, s.log, s.helpers);
-  assert.deepEqual(s.calls, []);
-  assert.match(s.messages.join('\n'), /dry run/);
+  const scenario = createScenario();
+  scenario.helpers.getCurrentBranch = () => assert.fail('must not inspect Git');
+  await updateLocal({ ...target, dryRun: true }, scenario.log, scenario.helpers);
+  assert.deepEqual(scenario.calls, []);
+  assert.match(scenario.messages.join('\n'), /dry run/);
 });
 
-test('unsafe checkouts skip fetching and pulling with instructions', async () => {
-  const cases = [
-    { getCurrentBranch: () => 'feature/work' },
-    { getCurrentBranch: () => 'HEAD' },
-    { isWorktreeClean: () => false },
-    { hasOperationInProgress: () => true },
-    { getUpstream: () => undefined },
-    { getUpstream: () => ({ remote: 'origin', remoteRef: 'refs/heads/next', ref: 'refs/remotes/origin/next' }) },
-    { getRemoteUrl: () => 'https://github.com/fork/package.git' },
-    { getRemoteUrl: () => 'https://other.example/owner/package.git' },
-    { getRemoteUrl: () => '/local/repository' },
-  ];
-  for (const overrides of cases) {
-    const s = createScenario();
-    await updateLocal(target, s.log, { ...s.helpers, ...overrides });
-    assert.deepEqual(s.calls, []);
-    assert.match(s.messages.join('\n'), /Local update skipped/);
-    assert.ok(s.messages.join('\n').includes('\ngit pull --rebase'));
-  }
+test('a different or detached branch skips the update', async () => {
+  await assertCheckoutSkipped({ getCurrentBranch: () => 'foo' });
+  await assertCheckoutSkipped({ getCurrentBranch: () => 'HEAD' });
+});
+
+test('unfinished Git work skips the update', async () => {
+  await assertCheckoutSkipped({ isWorktreeClean: () => false });
+  await assertCheckoutSkipped({ hasOperationInProgress: () => true });
+});
+
+test('a missing or mismatched upstream skips the update', async () => {
+  await assertCheckoutSkipped({ getUpstream: () => undefined });
+  await assertCheckoutSkipped({
+    getUpstream: () => ({ remote: 'origin', remoteRef: 'refs/heads/next', ref: 'refs/remotes/origin/next' }),
+  });
+  await assertCheckoutSkipped({ getRemoteUrl: () => 'https://github.com/foo/package.git' });
+  await assertCheckoutSkipped({ getRemoteUrl: () => 'https://foo.example/owner/package.git' });
+  await assertCheckoutSkipped({ getRemoteUrl: () => '/foo/bar' });
 });
 
 test('dirty checkout instructions put the command on its own line', async () => {
-  const s = createScenario();
-  s.helpers.isWorktreeClean = () => false;
-  await updateLocal(target, s.log, s.helpers);
-  assert.match(s.messages.join('\n'), /Commit or stash them, then run:\ngit pull --rebase$/);
+  const scenario = createScenario();
+  scenario.helpers.isWorktreeClean = () => false;
+  await updateLocal(target, scenario.log, scenario.helpers);
+  assert.match(scenario.messages.join('\n'), /Commit or stash them, then run:\ngit pull --rebase$/);
 });
 
-test('HTTPS and SSH URLs for the same repository are accepted', async () => {
-  for (const url of ['https://github.com/owner/package.git', 'ssh://git@github.com/owner/package.git', 'git@github.com:owner/package.git']) {
-    const s = createScenario();
-    s.helpers.getRemoteUrl = () => url;
-    await updateLocal(target, s.log, s.helpers);
-    assert.deepEqual(s.calls, ['fetch', 'pull']);
-  }
+test('HTTPS and SSH URLs identify the same repository', async () => {
+  await assertRemoteUpdated('https://github.com/owner/package.git');
+  await assertRemoteUpdated('ssh://git@github.com/owner/package.git');
+  await assertRemoteUpdated('git@github.com:owner/package.git');
 });
 
 test('checkout changes during fetch prevent pulling', async () => {
-  for (const change of ['branch', 'dirty', 'upstream']) {
-    const s = createScenario();
-    s.helpers.fetchRemote = async () => {
-      s.calls.push('fetch');
-      if (change === 'branch') s.helpers.getCurrentBranch = () => 'other';
-      if (change === 'dirty') s.helpers.isWorktreeClean = () => false;
-      if (change === 'upstream') s.helpers.getUpstream = () => ({ remote: 'another', remoteRef: 'refs/heads/main', ref: 'refs/remotes/another/main' });
-    };
-    await updateLocal(target, s.log, s.helpers);
-    assert.deepEqual(s.calls, ['fetch']);
-    assert.match(s.messages.join('\n'), /Local update skipped/);
-  }
+  await assertCheckoutChangedDuringFetch({ getCurrentBranch: () => 'foo' });
+  await assertCheckoutChangedDuringFetch({ isWorktreeClean: () => false });
+  await assertCheckoutChangedDuringFetch({
+    getUpstream: () => ({ remote: 'foo', remoteRef: 'refs/heads/main', ref: 'refs/remotes/foo/main' }),
+  });
 });
 
-test('fetch and pull failures preserve the successful release result', async () => {
-  for (const method of ['fetchRemote', 'pullRebase'] as const) {
-    const s = createScenario();
-    s.helpers[method] = async () => { throw new Error('Git failed'); };
-    await updateLocal(target, s.log, s.helpers);
-    assert.match(s.messages.join('\n'), /Release succeeded; local update failed: Git failed/);
-    assert.equal(s.messages.includes('✔ Local branch updated.'), false);
-  }
+test('Git failures preserve the successful release result', async () => {
+  await assertGitFailureReported('fetchRemote');
+  await assertGitFailureReported('pullRebase');
 });
 
-test('real Git helpers update a clean clone and preserve local commits', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'npm-release-local-update-'));
-  const remote = join(root, 'remote.git');
-  const local = join(root, 'local');
-  const publisher = join(root, 'publisher');
-  const previousCwd = process.cwd();
-  const run = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' }).trim();
-  try {
-    run(root, 'init', '--bare', '--initial-branch=main', remote);
-    run(root, 'clone', remote, local);
-    run(local, 'config', 'user.name', 'Test');
-    run(local, 'config', 'user.email', 'test@example.com');
-    writeFileSync(join(local, 'version.txt'), '1.0.0');
-    run(local, 'add', '.');
-    run(local, 'commit', '-m', 'initial');
-    run(local, 'push', '-u', 'origin', 'main');
-    run(root, 'clone', remote, publisher);
-    run(publisher, 'config', 'user.name', 'Test');
-    run(publisher, 'config', 'user.email', 'test@example.com');
-    writeFileSync(join(publisher, 'version.txt'), '1.0.1');
-    run(publisher, 'commit', '-am', 'release');
-    run(publisher, 'push');
+test('real Git helpers update a clean clone and preserve local commits', async (context) => {
+  const repository = createGitRepository(context);
+  repository.publishVersion('1.0.1');
+  const messages: string[] = [];
+  const helpers = { ...git, getRemoteUrl: () => 'https://github.com/owner/package.git' };
 
-    process.chdir(local);
-    const messages: string[] = [];
-    const helpers = { ...git, getRemoteUrl: () => 'https://github.com/owner/package.git' };
-    await updateLocal(target, message => messages.push(message), helpers);
-    assert.equal(run(local, 'rev-parse', 'HEAD'), run(publisher, 'rev-parse', 'HEAD'));
-    assert.ok(messages.includes('✔ Local branch updated.'));
+  await updateLocal(target, message => messages.push(message), helpers);
+  assert.equal(repository.localHead(), repository.publishedHead());
+  assert.ok(messages.includes('✔ Local branch updated.'));
 
-    writeFileSync(join(local, 'version.txt'), 'local change');
-    run(local, 'commit', '-am', 'local');
-    const localHead = run(local, 'rev-parse', 'HEAD');
-    await updateLocal(target, message => messages.push(message), helpers);
-    assert.equal(run(local, 'rev-parse', 'HEAD'), localHead);
-    assert.match(messages.join('\n'), /local-only commits/);
-
-    writeFileSync(join(local, 'untracked.txt'), 'keep me');
-    assert.equal(git.isWorktreeClean(), false);
-    run(local, 'checkout', '--detach');
-    assert.equal(git.getCurrentBranch(), 'HEAD');
-  } finally {
-    process.chdir(previousCwd);
-    rmSync(root, { recursive: true, force: true });
-  }
+  // A subsequent update must preserve unpublished local commits.
+  repository.commitLocalVersion('foo');
+  const localHead = repository.localHead();
+  await updateLocal(target, message => messages.push(message), helpers);
+  assert.equal(repository.localHead(), localHead);
+  assert.match(messages.join('\n'), /local-only commits/);
 });
+
+test('real Git helpers detect untracked files', (context) => {
+  const repository = createGitRepository(context);
+  repository.writeUntrackedFile();
+  assert.equal(git.isWorktreeClean(), false);
+});
+
+test('real Git helpers detect a detached checkout', (context) => {
+  const repository = createGitRepository(context);
+  repository.detach();
+  assert.equal(git.getCurrentBranch(), 'HEAD');
+});
+
+async function assertPullSkipped(counts: { ahead: number; behind: number }, message: RegExp) {
+  const scenario = createScenario();
+  scenario.helpers.getAheadBehind = () => counts;
+  await updateLocal(target, scenario.log, scenario.helpers);
+  assert.deepEqual(scenario.calls, ['fetch']);
+  assert.match(scenario.messages.join('\n'), message);
+}
+
+async function assertCheckoutSkipped(overrides: Partial<ReturnType<typeof createScenario>['helpers']>) {
+  const scenario = createScenario();
+  await updateLocal(target, scenario.log, { ...scenario.helpers, ...overrides });
+  assert.deepEqual(scenario.calls, []);
+  assert.match(scenario.messages.join('\n'), /Local update skipped/);
+  assert.ok(scenario.messages.join('\n').includes('\ngit pull --rebase'));
+}
+
+async function assertRemoteUpdated(url: string) {
+  const scenario = createScenario();
+  scenario.helpers.getRemoteUrl = () => url;
+  await updateLocal(target, scenario.log, scenario.helpers);
+  assert.deepEqual(scenario.calls, ['fetch', 'pull']);
+}
+
+async function assertCheckoutChangedDuringFetch(overrides: Partial<ReturnType<typeof createScenario>['helpers']>) {
+  const scenario = createScenario();
+  scenario.helpers.fetchRemote = async () => {
+    scenario.calls.push('fetch');
+    Object.assign(scenario.helpers, overrides);
+  };
+  await updateLocal(target, scenario.log, scenario.helpers);
+  assert.deepEqual(scenario.calls, ['fetch']);
+  assert.match(scenario.messages.join('\n'), /Local update skipped/);
+}
+
+async function assertGitFailureReported(method: 'fetchRemote' | 'pullRebase') {
+  const scenario = createScenario();
+  scenario.helpers[method] = async () => { throw new Error('Git failed'); };
+  await updateLocal(target, scenario.log, scenario.helpers);
+  assert.match(scenario.messages.join('\n'), /Release succeeded; local update failed: Git failed/);
+  assert.equal(scenario.messages.includes('✔ Local branch updated.'), false);
+}

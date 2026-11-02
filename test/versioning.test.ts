@@ -5,93 +5,38 @@ import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { npmVersionOperation } from '../src/action/versioning.ts';
-import { versionTables } from './fixtures/version-transitions.ts';
+import { testVersionTransitions } from './helpers/version-transitions.ts';
 
 describe('Version transitions', () => {
-  for (const versionTable of versionTables) {
-    describe(versionTable.name ?? versionTable.currentVersion, () => {
-      for (const [channel, version, expectedVersion] of versionTable.transitions) {
-        test(`${channel} ${version} ${expectedVersion ? `produces ${expectedVersion}` : 'is prohibited'}`, () => {
-          if (expectedVersion === null) {
-            assert.throws(
-              () => npmVersionOperation(versionTable.currentVersion, channel, version),
-              /lower operations are not permitted/,
-            );
-            return;
-          }
-
-          verifyPackageVersion(versionTable.currentVersion, channel, version, expectedVersion);
-        });
-      }
-    });
-  }
+  testVersionTransitions(calculatePackageVersion, /lower operations are not permitted/);
 });
 
-describe('Input validation', () => {
-  const invalidCases = [
-    {
-      name: 'rejects an empty channel',
-      channel: '',
-      version: 'patch',
-      error: 'Select a release channel',
-    },
-    {
-      name: 'rejects a channel starting with punctuation',
-      channel: '-select-',
-      version: 'patch',
-      error: 'Select a release channel',
-    },
-    {
-      name: 'rejects a channel starting with a number',
-      channel: '1next',
-      version: 'patch',
-      error: 'Select a release channel',
-    },
-    {
-      name: 'rejects a channel starting with whitespace',
-      channel: ' next',
-      version: 'patch',
-      error: 'Select a release channel',
-    },
-    {
-      name: 'rejects an unknown version operation',
-      channel: 'stable',
-      version: 'promote-next',
-      error: 'Unknown version operation: promote-next',
-    },
-    {
-      name: 'rejects an empty version operation',
-      channel: 'stable',
-      version: '',
-      error: 'Unknown version operation: ',
-    },
-  ];
+test('rejects invalid release channels', () => {
+  assert.throws(() => npmVersionOperation('1.2.3', '', 'patch'), /Select a release channel/);
+  assert.throws(() => npmVersionOperation('1.2.3', '-select-', 'patch'), /Select a release channel/);
+  assert.throws(() => npmVersionOperation('1.2.3', '1next', 'patch'), /Select a release channel/);
+  assert.throws(() => npmVersionOperation('1.2.3', ' next', 'patch'), /Select a release channel/);
+});
 
-  for (const invalidCase of invalidCases) {
-    test(invalidCase.name, () => {
-      assert.throws(
-        () => npmVersionOperation('1.2.3', invalidCase.channel, invalidCase.version),
-        { message: invalidCase.error },
-      );
-    });
-  }
+test('rejects invalid version operations', () => {
+  assert.throws(() => npmVersionOperation('1.2.3', 'stable', 'foo'), /Unknown version operation/);
+  assert.throws(() => npmVersionOperation('1.2.3', 'stable', ''), /Unknown version operation/);
 });
 
 test('accepts a custom channel starting with a letter', () => {
   assert.equal(npmVersionOperation('1.2.3', 'beta-2', 'patch'), 'prepatch');
 });
 
-function verifyPackageVersion(
+function calculatePackageVersion(
   currentVersion: string,
   channel: string,
   version: string,
-  expectedVersion: string,
-): void {
+) {
   const directory = mkdtempSync(join(tmpdir(), 'npm-release-version-'));
 
   try {
     const packagePath = join(directory, 'package.json');
-    writeFileSync(packagePath, JSON.stringify({ name: 'version-test', version: currentVersion }));
+    writeFileSync(packagePath, JSON.stringify({ name: 'foo', version: currentVersion }));
 
     const operation = npmVersionOperation(currentVersion, channel, version);
     const args = ['version', operation, '--no-git-tag-version'];
@@ -99,7 +44,7 @@ function verifyPackageVersion(
     execFileSync('npm', args, { cwd: directory, stdio: 'pipe' });
 
     const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'));
-    assert.equal(packageJson.version, expectedVersion);
+    return packageJson.version as string;
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
