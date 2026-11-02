@@ -11,7 +11,7 @@
  * npm unchanged as the prerelease identifier.
  *
  * Runtime usage (Node.js ≥ 24):
- *   node src/versioning.mts <current-version> <channel> <version>
+ *   node src/action/versioning.mts <current-version> <channel> <version>
  */
 export type Release = 'patch' | 'minor' | 'major';
 type NpmVersionOperation = Release | `pre${Release}` | 'prerelease';

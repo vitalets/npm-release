@@ -7,7 +7,7 @@ import {
   extractReleasedVersions,
   removeCompareLinks,
   getRepositoryUrl,
-} from '../src/changelog.mts';
+} from '../src/action/changelog.mts';
 
 const REPO_URL = 'https://github.com/owner/repo';
 

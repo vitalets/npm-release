@@ -5,7 +5,7 @@
  * stdout for use in CI (e.g. GitHub Release body).
  *
  * Runtime usage (Node.js ≥ 24):
- *   node src/changelog.mts <version>
+ *   node src/action/changelog.mts <version>
  */
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';

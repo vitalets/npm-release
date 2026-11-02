@@ -8,8 +8,8 @@
 
 `action.yml` orchestrates the release. The runtime logic is split into two small TypeScript modules:
 
-- `src/versioning.mts` validates the selected release operation and maps it to an npm version operation.
-- `src/changelog.mts` stamps `CHANGELOG.md`, refreshes compare links, and extracts the notes used for the GitHub Release.
+- `src/action/versioning.mts` validates the selected release operation and maps it to an npm version operation.
+- `src/action/changelog.mts` stamps `CHANGELOG.md`, refreshes compare links, and extracts the notes used for the GitHub Release.
 
 The action delegates version calculation to `npm version`. Stable releases then update the changelog, push the release commit and exact tag, publish to npm, and create a GitHub Release. Other channels publish prereleases under matching npm dist-tags but deliberately skip the changelog and GitHub Release.
 

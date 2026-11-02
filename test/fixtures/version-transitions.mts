@@ -1,4 +1,4 @@
-import type { Release } from '../../src/versioning.mts';
+import type { Release } from '../../src/action/versioning.mts';
 
 export type Transition = [channel: string, version: Release, expectedVersion: string | null];
 

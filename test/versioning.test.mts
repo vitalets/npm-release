@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { npmVersionOperation } from '../src/versioning.mts';
+import { npmVersionOperation } from '../src/action/versioning.mts';
 import { versionTables } from './fixtures/version-transitions.mts';
 
 describe('Version transitions', () => {

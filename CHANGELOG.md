@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Move action runtime scripts into `src/action/`.
+
 ## [2.4.0] - 2026-10-28
 
 ## [2.3.10] - 2026-10-28
