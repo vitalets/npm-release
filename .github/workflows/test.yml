@@ -22,4 +22,5 @@ jobs:
         with:
           node-version: 20
       - name: Verify compiled CLI on Node 20
-        run: node dist/cli/index.js --help | grep -q 'Usage: npm-release'
+        run: |
+          node dist/cli/index.js --help | grep -q 'Usage: npm-release'

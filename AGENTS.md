@@ -19,4 +19,5 @@ Consumers prepare Node and npm authentication before invoking the action. The ac
 
 - Action runtime scripts in `src/action/` must remain dependency-free and use only Node.js built-ins. Action consumers do not install this repository's development dependencies.
 - Action scripts run directly from their TypeScript source with Node.js 24 or newer. Do not introduce a required build or bundled action runtime artifact.
+- Add changelog entries for meaningful user-facing changes. Skip tiny fixes, routine maintenance, and internal CI or documentation tweaks unless the user explicitly requests an entry.
 - Record new changes only in the `[Unreleased]` section of `CHANGELOG.md`. Never modify an existing released version's changelog entries unless the user explicitly asks for it.
