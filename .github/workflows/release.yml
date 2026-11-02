@@ -1,4 +1,4 @@
-# Releases this GitHub Action itself; npm publishing is always skipped.
+# Releases the GitHub Action and npm CLI together.
 name: release
 
 on:
@@ -42,21 +42,24 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci
       - run: npm test
+      - run: npm run tsc
+      - run: npm run build
 
       - uses: ./
         with:
           channel:          ${{ inputs.channel }}
           version:          ${{ inputs.version }}
-          skip-npm-publish: 'true'
           skip-changelog-update: ${{ inputs.skip-changelog-update }}
           dry-run:          ${{ inputs.dry-run }}
           github-token:     ${{ secrets.GITHUB_TOKEN }}

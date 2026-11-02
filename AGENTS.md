@@ -8,8 +8,8 @@
 
 `action.yml` orchestrates the release. The runtime logic is split into two small TypeScript modules:
 
-- `src/action/versioning.mts` validates the selected release operation and maps it to an npm version operation.
-- `src/action/changelog.mts` stamps `CHANGELOG.md`, refreshes compare links, and extracts the notes used for the GitHub Release.
+- `src/action/versioning.ts` validates the selected release operation and maps it to an npm version operation.
+- `src/action/changelog.ts` stamps `CHANGELOG.md`, refreshes compare links, and extracts the notes used for the GitHub Release.
 
 The action delegates version calculation to `npm version`. Stable releases then update the changelog, push the release commit and exact tag, publish to npm, and create a GitHub Release. Other channels publish prereleases under matching npm dist-tags but deliberately skip the changelog and GitHub Release.
 
@@ -17,6 +17,6 @@ Consumers prepare Node and npm authentication before invoking the action. The ac
 
 ## Important Rules
 
-- Runtime scripts must remain dependency-free and use only Node.js built-ins. Consumers do not install this repository's development dependencies.
-- Scripts run directly from their TypeScript source with Node.js 24 or newer. Do not introduce a required build or bundled runtime artifact.
+- Action runtime scripts in `src/action/` must remain dependency-free and use only Node.js built-ins. Action consumers do not install this repository's development dependencies.
+- Action scripts run directly from their TypeScript source with Node.js 24 or newer. Do not introduce a required build or bundled action runtime artifact.
 - Record new changes only in the `[Unreleased]` section of `CHANGELOG.md`. Never modify an existing released version's changelog entries unless the user explicitly asks for it.

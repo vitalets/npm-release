@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { describe, test } from 'node:test';
-import { versionTables } from '../../test/fixtures/version-transitions.mts';
+import { versionTables } from '../../test/fixtures/version-transitions.ts';
 
 interface PreviewApi {
   releaseLinks(repository: { owner: string; repository: string }, ref: { name: string; type: string }, version?: string): { head: string; tag: string; changelog: string; compare: string };

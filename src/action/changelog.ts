@@ -5,7 +5,7 @@
  * stdout for use in CI (e.g. GitHub Release body).
  *
  * Runtime usage (Node.js ≥ 24):
- *   node src/action/changelog.mts <version>
+ *   node src/action/changelog.ts <version>
  */
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -22,7 +22,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 /** Updates the changelog for the requested release version. */
 function main() {
   if (!version) {
-    logger.error('Usage: changelog.mts <version>');
+    logger.error('Usage: changelog.ts <version>');
     process.exit(1);
   }
 

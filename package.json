@@ -1,19 +1,39 @@
 {
-  "name": "npm-release",
+  "name": "@vitalets/npm-release",
+  "description": "Interactive CLI for npm releases through GitHub Actions",
   "version": "2.4.0",
-  "private": true,
-  "description": "GitHub composite action for full npm package releases via OIDC trusted publishing",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/vitalets/npm-release.git"
   },
+  "bin": {
+    "npm-release": "dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "test": "node --test test/*.test.mts extension/test/*.test.mts",
+    "build": "tsc -p tsconfig.build.json",
+    "tsc": "tsc --noEmit",
+    "test": "node --test test/*.test.ts extension/test/*.test.ts",
     "sync": "git pull && git fetch --tags --force"
   },
+  "dependencies": {
+    "@inquirer/prompts": "^7.10.1",
+    "semver": "^7.8.5",
+    "yaml": "^2.9.1"
+  },
   "devDependencies": {
-    "@types/node": "^25.9.1"
+    "@types/node": "^25.9.1",
+    "@types/semver": "^7.8.0",
+    "typescript": "^7.0.2"
   },
   "license": "MIT"
 }

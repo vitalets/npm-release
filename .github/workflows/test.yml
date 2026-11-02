@@ -14,4 +14,12 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
+      - run: npm run tsc
+      - run: npm run build
       - run: npm test
+      - run: npm pack --dry-run
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+      - name: Verify compiled CLI on Node 20
+        run: node dist/cli/index.js --help | grep -q 'Usage: npm-release'

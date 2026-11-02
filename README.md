@@ -203,6 +203,64 @@ The optional [Chrome extension](extension/README.md) shows the current package v
 
 <img src="https://raw.githubusercontent.com/vitalets/npm-release/main/extension/screenshot.png" alt="Chrome extension showing the current and next package versions in GitHub's Run workflow form" width="368">
 
+## CLI usage
+
+Trigger your release workflow from the terminal. Requires [GitHub CLI](https://cli.github.com/) authenticated with `gh auth login`.
+
+```sh
+npx @vitalets/npm-release .github/workflows/release.yml
+```
+
+Or add a script to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "release": "npx @vitalets/npm-release .github/workflows/release.yml"
+  }
+}
+```
+
+Releases use the default branch on GitHub. Push your changes first.
+
+After success, the CLI pulls with `git pull --rebase` when the checkout is clean,
+on the released branch, tracks the same GitHub branch, and has no local-only commits.
+Otherwise, it explains what to do. Dry runs skip the local update.
+
+Example session (abbreviated):
+
+```text
+$ npm run release
+
+Release your-org/your-package from the remote branch main on GitHub.
+Local changes are excluded.
+Current version: 1.2.3
+
+✔ Channel: stable
+? Version:
+❯ patch → 1.2.4
+  minor → 1.3.0
+  major → 2.0.0
+
+...after selecting patch...
+
+? Dry run: (y/N) n
+? Skip NPM publish: (y/N) n
+? Skip Changelog and GitHub release: (y/N) n
+
+Release: 1.2.3 → 1.2.4
+
+? Confirm: (Y/n)
+⠋ Starting release workflow…
+✔ Release workflow started.
+https://github.com/your-org/your-package/actions/runs/123456789
+⠋ Waiting for release workflow to finish…
+✔ Release workflow completed successfully.
+⠋ Fetching release changes…
+⠋ Updating local branch…
+✔ Local branch updated.
+```
+
 ## Development
 
 See [DEVELOPMENT.md](DEVELOPMENT.md).

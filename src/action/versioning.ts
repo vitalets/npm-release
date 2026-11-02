@@ -11,7 +11,7 @@
  * npm unchanged as the prerelease identifier.
  *
  * Runtime usage (Node.js ≥ 24):
- *   node src/action/versioning.mts <current-version> <channel> <version>
+ *   node src/action/versioning.ts <current-version> <channel> <version>
  */
 export type Release = 'patch' | 'minor' | 'major';
 type NpmVersionOperation = Release | `pre${Release}` | 'prerelease';
@@ -27,7 +27,7 @@ function main(): void {
   const [currentVersion, channel, version] = process.argv.slice(2);
 
   if (!currentVersion || channel === undefined || version === undefined) {
-    console.error('Usage: versioning.mts <current-version> <channel> <version>');
+    console.error('Usage: versioning.ts <current-version> <channel> <version>');
     process.exitCode = 1;
     return;
   }

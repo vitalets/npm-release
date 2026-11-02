@@ -46,7 +46,7 @@ runs:
       run: |
         CURRENT_VERSION=$(npm pkg get version | tr -d '"')
         echo "PREVIOUS_VERSION=$CURRENT_VERSION" >> "$GITHUB_ENV"
-        VERSION_OPERATION=$(node "$GITHUB_ACTION_PATH/src/action/versioning.mts" "$CURRENT_VERSION" "$CHANNEL" "$VERSION_INCREMENT")
+        VERSION_OPERATION=$(node "$GITHUB_ACTION_PATH/src/action/versioning.ts" "$CURRENT_VERSION" "$CHANNEL" "$VERSION_INCREMENT")
         if [[ "$CHANNEL" == "stable" ]]; then
           npm version "$VERSION_OPERATION" --no-git-tag-version
           echo "prerelease=false" >> $GITHUB_OUTPUT
@@ -64,7 +64,7 @@ runs:
       id: update-changelog
       shell: bash
       run: |
-        NOTES=$(node "$GITHUB_ACTION_PATH/src/action/changelog.mts" "${{ env.VERSION }}")
+        NOTES=$(node "$GITHUB_ACTION_PATH/src/action/changelog.ts" "${{ env.VERSION }}")
         echo "NOTES<<EOF" >> $GITHUB_ENV
         echo "$NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
