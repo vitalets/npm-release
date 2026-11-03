@@ -1,6 +1,8 @@
 # npm-release
 
 [![Test](https://github.com/vitalets/npm-release/actions/workflows/test.yml/badge.svg)](https://github.com/vitalets/npm-release/actions/workflows/test.yml)
+[![npm version](https://img.shields.io/npm/v/@vitalets/npm-release)](https://www.npmjs.com/package/@vitalets/npm-release)
+[![License](https://img.shields.io/npm/l/@vitalets/npm-release)](LICENSE)
 
 A GitHub action that performs a full npm package release:
 
