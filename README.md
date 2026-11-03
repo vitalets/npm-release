@@ -223,6 +223,19 @@ Or add a script to your `package.json`:
 
 Then run `npm run release`.
 
+Use `--channel` to skip the channel prompt. For example, to release the `next` channel from the `next` branch:
+
+```json
+{
+  "scripts": {
+    "release": "npx @vitalets/npm-release .github/workflows/release.yml",
+    "release:next": "npm run release -- --branch next --channel next"
+  }
+}
+```
+
+The channel must match a workflow choice (or be a valid channel when the workflow uses a string input). Other inputs and the final confirmation remain interactive. Branch and channel are independent; `--channel next` alone still targets `main`.
+
 Check out `main` (or pass `--branch <name>`) with a clean working tree and all changes synced with GitHub.
 
 Example session:

@@ -1,17 +1,48 @@
+/**
+ * Collects release workflow inputs and confirms the release interactively.
+ */
 import { select, confirm, input } from '@inquirer/prompts';
 import type { WorkflowInput } from './parse-workflow.ts';
 
 type VersionPreview = (channel: string, choice: string) => string;
 
-export async function collectInputs(definitions: WorkflowInput[], preview: VersionPreview) {
+/**
+ * Prompts for workflow inputs, using an explicit channel when supplied.
+ */
+export async function collectInputs(
+  definitions: WorkflowInput[], preview: VersionPreview, channel?: string, prompt = promptField,
+) {
+  if (channel !== undefined) validateChannel(definitions, channel);
   const answers: Record<string, string> = Object.create(null);
   for (const field of definitions) {
-    answers[field.name] = await promptField(field, answers.channel, preview);
+    answers[field.name] = field.name === 'channel' && channel !== undefined
+      ? channel
+      : await prompt(field, answers.channel, preview);
   }
   return answers;
 }
 
-function promptField(field: WorkflowInput, channel: string, preview: VersionPreview): Promise<string> {
+/**
+ * Asks for final approval before dispatching the release.
+ */
+export async function confirmRelease() {
+  return confirm({ message: 'Confirm:', default: true });
+}
+
+function validateChannel(definitions: WorkflowInput[], channel: string) {
+  const field = definitions.find(field => field.name === 'channel');
+  if (!field) throw new Error('Workflow must declare a channel input');
+  const validation = validateText(field, channel);
+  if (validation !== true) throw new Error(`Invalid --channel: ${validation}`);
+  if (field.type === 'choice' && !field.options!.includes(channel)) {
+    throw new Error(`Invalid --channel: choose one of ${field.options!.filter(Boolean).join(', ')}`);
+  }
+  if (field.type !== 'choice' && field.type !== 'string') {
+    throw new Error('--channel requires a choice or string workflow input');
+  }
+}
+
+function promptField(field: WorkflowInput, channel: string, preview: VersionPreview) {
   const message = `${field.description.replace(/:$/, '')}:`;
   switch (field.type) {
     case 'boolean': return promptBoolean(field, message);
@@ -20,11 +51,11 @@ function promptField(field: WorkflowInput, channel: string, preview: VersionPrev
   }
 }
 
-async function promptBoolean(field: WorkflowInput, message: string): Promise<string> {
+async function promptBoolean(field: WorkflowInput, message: string) {
   return String(await confirm({ message, default: field.default === 'true' }));
 }
 
-function promptChoice(field: WorkflowInput, message: string, channel: string, preview: VersionPreview): Promise<string> {
+function promptChoice(field: WorkflowInput, message: string, channel: string, preview: VersionPreview) {
   const choices = field.options!
     .filter(value => value !== '' || !(field.required || field.name === 'channel'))
     .map(value => createChoiceOption(field, value, channel, preview));
@@ -41,7 +72,7 @@ function createChoiceOption(field: WorkflowInput, value: string, channel: string
   }
 }
 
-function promptText(field: WorkflowInput, message: string): Promise<string> {
+function promptText(field: WorkflowInput, message: string) {
   return input({ message, default: field.default, validate: value => validateText(field, value) });
 }
 
@@ -53,5 +84,3 @@ function validateText(field: WorkflowInput, value: string): true | string {
   if (field.type === 'number' && value !== '' && !Number.isFinite(Number(value))) return 'Enter a number';
   return true;
 }
-
-export function confirmRelease(): Promise<boolean> { return confirm({ message: 'Confirm:', default: true }); }

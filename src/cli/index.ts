@@ -15,7 +15,7 @@ import { withSpinner } from './spinner.ts';
 import { updateLocal } from './local-update.ts';
 import { parseCliArgs } from './args.ts';
 
-type ReleaseOptions = { workflow: string; branch?: string };
+type ReleaseOptions = { workflow: string; branch?: string; channel?: string };
 type ReleaseContext = ReturnType<typeof prepareRelease>;
 
 // Run only when executed directly, not when imported by tests or the demo.
@@ -33,7 +33,10 @@ export async function release(options: ReleaseOptions, dependencies = {
   const { github, git, collect, confirm, updateLocal, log } = dependencies;
   const context = prepareRelease(options, github, git);
   printReleaseContext(context, log);
-  const inputs = await collect(context.definitions, (channel, choice) => preview(context.version, channel, choice));
+  const inputs = await collect(
+    context.definitions, (channel, choice) => preview(context.version, channel, choice), options.channel,
+  );
+  if (options.channel !== undefined) log(`Channel: ${inputs.channel}`);
   if (!await confirmPlan(context, inputs, confirm, log)) return;
   checkCheckout(context.branch, git);
   if (git.getHeadSha() !== context.sha) throw new Error('Local commit changed during selection. Run again to refresh the preview.');
@@ -57,7 +60,7 @@ async function main() {
   try {
     const options = parseCliArgs(process.argv.slice(2));
     if (options.help) {
-      console.log("Usage: npm-release .github/workflows/release.yml [--branch <name>]\n\nDefaults to main. Requires a clean checkout on the selected branch, synchronized with GitHub.\nRequires Node.js 20+, git, and authenticated GitHub CLI (gh auth login).");
+      console.log("Usage: npm-release .github/workflows/release.yml [--branch <name>] [--channel <name>]\n\nBranch defaults to main. --channel skips the channel prompt; otherwise it is selected interactively.\nRequires a clean checkout on the selected branch, synchronized with GitHub.\nRequires Node.js 20+, git, and authenticated GitHub CLI (gh auth login).");
     } else {
       if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('Run this command in an interactive terminal.');
       await release(options);

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { collectInputs } from '../src/cli/cli-inputs.ts';
 import { parseCliArgs } from '../src/cli/args.ts';
 import { Gh, type Runner } from '../src/cli/gh.ts';
 import * as git from '../src/cli/git.ts';
@@ -22,6 +23,60 @@ test('requires a concrete release branch', () => {
   assert.equal(git.resolveBranch(), 'main');
   assert.equal(git.resolveBranch('next'), 'next');
   assert.throws(() => git.resolveBranch('*'), /specific branch/);
+});
+
+test('parses an explicit release channel', () => {
+  assert.deepEqual(parseCliArgs(['.github/workflows/release.yml', '--branch', 'next', '--channel', 'next']), {
+    help: false, workflow: '.github/workflows/release.yml', branch: 'next', channel: 'next',
+  });
+  assert.equal(parseCliArgs(['.github/workflows/release.yml']).channel, undefined);
+  assert.throws(() => parseCliArgs(['.github/workflows/release.yml', '--channel']), /argument missing/i);
+  assert.throws(() => parseCliArgs(['.github/workflows/release.yml', '--channel=']), /channel.*letter/);
+  assert.throws(() => parseCliArgs(['.github/workflows/release.yml', '--channel', '1foo']), /channel.*letter/);
+  assert.throws(() => parseCliArgs(['.github/workflows/release.yml', '--channel', 'foo bar']), /channel.*letter/);
+});
+
+test('an explicit channel skips its prompt and drives the version preview and dispatch', async () => {
+  const scenario = createScenario({ branch: 'next' });
+  const prompted: string[] = [];
+  scenario.dependencies.collect = (definitions, preview, channel) => collectInputs(definitions, preview, channel,
+    async (field, selectedChannel, preview) => {
+      prompted.push(field.name);
+      if (field.name === 'version') {
+        assert.equal(preview(selectedChannel, 'minor'), '1.3.0-next.0');
+        return 'minor';
+      }
+      return 'true';
+    });
+  await release({ workflow: '.github/workflows/release.yml', branch: 'next', channel: 'next' }, scenario.dependencies);
+  assert.deepEqual(prompted, ['version', 'dry-run', 'skip-npm-publish', 'skip-changelog-update']);
+  const dispatch = scenario.calls.find(c => c.args[0] === 'workflow' && c.args[1] === 'run')!;
+  assert.equal(JSON.parse(dispatch.input!).channel, 'next');
+  assert.ok(scenario.messages.includes('Channel: next'));
+  assert.ok(scenario.messages.some(message => message.includes('1.2.3 → 1.3.0-next.0')));
+});
+
+test('an unsupported workflow channel fails before prompting', async () => {
+  await assert.rejects(collectInputs(extractWorkflowInputs(workflow), preview.bind(null, '1.2.3'), 'foo', async () => {
+    assert.fail('Must reject before prompting');
+  }), /channel.*stable, next/);
+});
+
+test('string channel inputs accept custom channels', async () => {
+  const answers = await collectInputs([
+    { name: 'channel', description: 'Channel', type: 'string', required: true },
+  ], preview.bind(null, '1.2.3'), 'foo');
+  assert.equal(answers.channel, 'foo');
+});
+
+test('omitting the channel preserves interactive selection', async () => {
+  const prompted: string[] = [];
+  const answers = await collectInputs(extractWorkflowInputs(workflow), preview.bind(null, '1.2.3'), undefined, async field => {
+    prompted.push(field.name);
+    return field.name === 'channel' ? 'stable' : 'true';
+  });
+  assert.equal(prompted[0], 'channel');
+  assert.equal(answers.channel, 'stable');
 });
 
 test('workflow parsing preserves declaration order and boolean defaults', () => {
@@ -299,7 +354,7 @@ function createScenario({
         getHeadSha: () => head,
         readReleaseFile: (path: string) => path === 'package.json' ? '{"version":"1.2.3"}' : workflow,
       },
-      collect: async () => inputs,
+      collect: (async () => inputs) as typeof collectInputs,
       confirm: async () => { afterConfirm(); return confirmed; },
       log: (message: string) => { messages.push(message); },
       updateLocal: async (target: unknown) => { localUpdates.push(target); },
