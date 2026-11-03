@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-11-03
+
 - Add an interactive CLI for GitHub Actions releases with version previews, checkout safety checks, and automatic local updates.
 
 ## [2.4.0] - 2026-10-28
@@ -95,7 +97,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.4.0...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.4.1...HEAD
+[2.4.1]: https://github.com/vitalets/npm-release/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/vitalets/npm-release/compare/v2.3.10...v2.4.0
 [2.3.10]: https://github.com/vitalets/npm-release/compare/v2.3.9...v2.3.10
 [2.3.9]: https://github.com/vitalets/npm-release/compare/v2.3.8...v2.3.9
