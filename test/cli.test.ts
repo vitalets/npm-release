@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { parseCliArgs } from '../src/cli/args.ts';
 import { Gh, type Runner } from '../src/cli/gh.ts';
-import { resolveBranch } from '../src/cli/git.ts';
+import * as git from '../src/cli/git.ts';
 import { extractWorkflowInputs } from '../src/cli/parse-workflow.ts';
 import { preview, release } from '../src/cli/index.ts';
+import { execFileSync } from 'node:child_process';
+import { createGitRepository } from './helpers/local-update.ts';
 import { testVersionTransitions } from './helpers/version-transitions.ts';
 
 const workflow = readFileSync(new URL('../.github/workflows/example.yml', import.meta.url), 'utf8');
@@ -15,18 +17,11 @@ test('validates the workflow path', () => {
   assert.throws(() => parseCliArgs(['../release.yml']), /workflow path/);
 });
 
-test('accepts the current-branch wildcard', () => {
-  assert.deepEqual(parseCliArgs(['.github/workflows/release.yml', '--branch=*']), {
-    help: false, workflow: '.github/workflows/release.yml', branch: '*',
-  });
-});
-
-test('branch policy never reads the local branch without explicit wildcard', () => {
-  const unexpected = () => { throw new Error('must not read local branch'); };
-  assert.equal(resolveBranch(undefined, 'main', unexpected), 'main');
-  assert.equal(resolveBranch('next', 'main', unexpected), 'next');
-  assert.equal(resolveBranch('*', 'main', () => 'feature/release\n'), 'feature/release');
-  assert.throws(() => resolveBranch('*', 'main', () => ''), /detached HEAD/);
+test('requires a concrete release branch', () => {
+  assert.throws(() => parseCliArgs(['.github/workflows/release.yml', '--branch=*']), /specific branch/);
+  assert.equal(git.resolveBranch(), 'main');
+  assert.equal(git.resolveBranch('next'), 'next');
+  assert.throws(() => git.resolveBranch('*'), /specific branch/);
 });
 
 test('workflow parsing preserves declaration order and boolean defaults', () => {
@@ -66,10 +61,9 @@ test('dispatches and monitors a release', async () => {
   assert.deepEqual(dispatch.args, ['workflow', 'run', 'release.yml', '--repo', 'owner/package', '--ref', 'main', '--json']);
   assert.deepEqual(JSON.parse(dispatch.input!), inputs);
 
-  // Preview reads are pinned to the branch commit checked before dispatch.
-  const view = scenario.calls.find(c => c.args[0] === 'workflow' && c.args[1] === 'view')!;
-  assert.deepEqual(view.args, ['workflow', 'view', 'release.yml', '--repo', 'owner/package', '--ref', 'original-sha', '--yaml']);
-  assert.equal(scenario.calls.filter(c => c.args.includes('ref=original-sha')).length, 1);
+  // Preview uses the local package version without downloading release files.
+  assert.ok(scenario.messages.some(message => message.includes('1.2.3 → 1.3.0')));
+  assert.equal(scenario.calls.some(c => c.args.includes('--yaml') || c.args.some(arg => arg.includes('/contents/'))), false);
 
   // Completion reports the run link and updates the matching checkout.
   assert.ok(scenario.messages.includes('https://github.com/owner/package/actions/runs/123'));
@@ -134,7 +128,133 @@ test('a changed remote branch prevents dispatch', async () => {
   assertNoDispatch(scenario);
 });
 
+test('a different checkout branch prevents release', async () => {
+  const scenario = createScenario({ branch: 'next' });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /requires branch main.*next/);
+  assertNoDispatch(scenario);
+});
+
+test('an explicitly selected branch can release', async () => {
+  const scenario = createScenario({ branch: 'next' });
+  await release({ workflow: '.github/workflows/release.yml', branch: 'next' }, scenario.dependencies);
+  assert.ok(scenario.calls.some(call => call.args.includes('--ref') && call.args.includes('next')));
+});
+
+test('detached HEAD is rejected even with an explicit branch', async () => {
+  const scenario = createScenario({ branch: 'HEAD' });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml', branch: 'main' }, scenario.dependencies), /detached HEAD/);
+  assertNoDispatch(scenario);
+});
+
+test('dirty checkouts prevent release', async () => {
+  const scenario = createScenario({ clean: false });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /Commit or stash/);
+  assertNoDispatch(scenario);
+});
+
+test('unfinished Git operations prevent release', async () => {
+  const scenario = createScenario({ operation: true });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /Finish or abort/);
+  assertNoDispatch(scenario);
+});
+
+test('unpublished or stale local commits prevent release', async () => {
+  const scenario = createScenario({ head: 'different-sha' });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /not synchronized/);
+  assertNoDispatch(scenario);
+});
+
+test('local commits changed during prompts prevent dispatch', async () => {
+  const scenario = createScenario({ afterConfirm: () => {
+    scenario.dependencies.git.getHeadSha = () => 'different-sha';
+  } });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /Local commit changed/);
+  assertNoDispatch(scenario);
+});
+
+test('changes made during prompts prevent dispatch', async () => {
+  const scenario = createScenario({ afterConfirm: () => {
+    scenario.dependencies.git.isWorktreeClean = () => false;
+  } });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /uncommitted/);
+  assertNoDispatch(scenario);
+});
+
+test('switching branches during prompts prevents dispatch', async () => {
+  const scenario = createScenario({ afterConfirm: () => {
+    scenario.dependencies.git.getCurrentBranch = () => 'next';
+  } });
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /requires branch main/);
+  assertNoDispatch(scenario);
+});
+
+test('reads tracked files from the repository root when invoked in a subdirectory', context => {
+  createGitRepository(context);
+  writeFileSync('package.json', '{"version":"1.2.3"}');
+  mkdirSync('.github/workflows', { recursive: true });
+  writeFileSync('.github/workflows/release.yml', workflow);
+  execFileSync('git', ['add', '.']);
+  execFileSync('git', ['commit', '-m', 'foo']);
+  process.chdir('.github');
+  assert.equal(git.readReleaseFile('package.json'), '{"version":"1.2.3"}');
+  assert.equal(git.readReleaseFile('.github/workflows/release.yml'), workflow);
+});
+
+test('missing and ignored release files cannot supply configuration', context => {
+  createGitRepository(context);
+  assert.throws(() => git.readReleaseFile('package.json'), /tracked release file/);
+  writeFileSync('.gitignore', 'package.json\n');
+  writeFileSync('package.json', '{"version":"1.2.3"}');
+  assert.throws(() => git.readReleaseFile('package.json'), /tracked release file/);
+});
+
+test('all local change types are detected', context => {
+  const repository = createGitRepository(context);
+  assert.equal(git.isWorktreeClean(), true);
+  repository.writeUntrackedFile();
+  assert.equal(git.isWorktreeClean(), false);
+  execFileSync('git', ['add', 'foo.txt']);
+  assert.equal(git.isWorktreeClean(), false);
+  execFileSync('git', ['commit', '-m', 'foo']);
+  writeFileSync('version.txt', '2.0.0');
+  assert.equal(git.isWorktreeClean(), false);
+});
+
+test('local-only commits prevent release against a real checkout', async context => {
+  const repository = createGitRepository(context);
+  const scenario = createScenario({ remoteSha: repository.publishedHead() });
+  repository.commitLocalVersion('2.0.0');
+  scenario.dependencies.git = git;
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /not synchronized/);
+  assertNoDispatch(scenario);
+});
+
+test('remote-only commits prevent release even with stale tracking refs', async context => {
+  const repository = createGitRepository(context);
+  repository.publishVersion('2.0.0');
+  const scenario = createScenario({ remoteSha: repository.publishedHead() });
+  scenario.dependencies.git = git;
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /not synchronized/);
+  assertNoDispatch(scenario);
+});
+
+test('diverged commits prevent release', async context => {
+  const repository = createGitRepository(context);
+  repository.publishVersion('2.0.0');
+  repository.commitLocalVersion('3.0.0');
+  const scenario = createScenario({ remoteSha: repository.publishedHead() });
+  scenario.dependencies.git = git;
+  await assert.rejects(release({ workflow: '.github/workflows/release.yml' }, scenario.dependencies), /not synchronized/);
+  assertNoDispatch(scenario);
+});
+
 function createScenario({
+  remoteSha = 'original-sha',
+  branch = 'main',
+  clean = true,
+  operation = false,
+  head = 'original-sha',
+  afterConfirm = () => {},
   confirmed = true,
   moved = false,
   missing = false,
@@ -153,10 +273,8 @@ function createScenario({
     if (args[0] === 'repo') return JSON.stringify({ nameWithOwner: 'owner/package', defaultBranchRef: { name: 'main' } });
     if (args[1]?.includes('/branches/')) {
       if (missing) throw new Error('Branch not found');
-      return JSON.stringify({ commit: { sha: moved && branchReads++ ? 'new-sha' : 'original-sha' } });
+      return JSON.stringify({ commit: { sha: moved && branchReads++ ? 'new-sha' : remoteSha } });
     }
-    if (args[0] === 'workflow' && args[1] === 'view') return workflow;
-    if (args.includes('repos/owner/package/contents/package.json')) return '{"version":"1.2.3"}';
     if (args[0] === 'workflow' && args[1] === 'run') {
       if (dispatchFails) throw new Error('Workflow dispatch failed');
       return runUrl;
@@ -173,9 +291,16 @@ function createScenario({
     localUpdates,
     dependencies: {
       github: new Gh(run),
-      getCurrentBranch: () => 'feature/release',
+      git: {
+        ...git,
+        getCurrentBranch: () => branch,
+        isWorktreeClean: () => clean,
+        hasOperationInProgress: () => operation,
+        getHeadSha: () => head,
+        readReleaseFile: (path: string) => path === 'package.json' ? '{"version":"1.2.3"}' : workflow,
+      },
       collect: async () => inputs,
-      confirm: async () => confirmed,
+      confirm: async () => { afterConfirm(); return confirmed; },
       log: (message: string) => { messages.push(message); },
       updateLocal: async (target: unknown) => { localUpdates.push(target); },
     },

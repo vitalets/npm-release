@@ -221,19 +221,18 @@ Or add a script to your `package.json`:
 }
 ```
 
-Releases use the default branch on GitHub. Push your changes first.
+Then run `npm run release`.
 
-After success, the CLI pulls with `git pull --rebase` when the checkout is clean,
-on the released branch, tracks the same GitHub branch, and has no local-only commits.
-Otherwise, it explains what to do. Dry runs skip the local update.
+Check out `main` (or pass `--branch <name>`) with a clean working tree and all changes synced with GitHub.
 
-Example session (abbreviated):
+Example session:
 
 ```text
-$ npm run release
+$ npx @vitalets/npm-release .github/workflows/release.yml
 
-Release your-org/your-package from the remote branch main on GitHub.
-Local changes are excluded.
+Releasing your-org/your-package from the remote branch main on GitHub.
+Local checkout is clean and matches the remote branch.
+
 Current version: 1.2.3
 
 ✔ Channel: stable
@@ -260,6 +259,8 @@ https://github.com/your-org/your-package/actions/runs/123456789
 ⠋ Updating local branch…
 ✔ Local branch updated.
 ```
+
+Dry runs skip the local update. If pulling is unsafe, the CLI provides manual instructions.
 
 ## Development
 

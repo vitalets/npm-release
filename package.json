@@ -23,7 +23,8 @@
     "build": "tsc -p tsconfig.build.json",
     "tsc": "tsc --noEmit",
     "test": "node --test test/*.test.ts extension/test/*.test.ts",
-    "sync": "git pull && git fetch --tags --force"
+    "sync": "git pull && git fetch --tags --force",
+    "demo:cli": "node scripts/demo-cli.ts"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1",

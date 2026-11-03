@@ -4,9 +4,7 @@
 
 ## [Unreleased]
 
-- Move action runtime scripts into `src/action/`.
-- Add the `@vitalets/npm-release` interactive CLI with workflow-ordered inputs, version previews, explicit branch selection, and GitHub workflow dispatch.
-- Automatically update eligible local branches after successful releases; provide instructions when a manual update is needed.
+- Add an interactive CLI for GitHub Actions releases with version previews, checkout safety checks, and automatic local updates.
 
 ## [2.4.0] - 2026-10-28
 

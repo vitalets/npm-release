@@ -1,12 +1,19 @@
+/**
+ * Accesses GitHub repository metadata and dispatches and monitors releases.
+ */
 import { execFile, execFileSync } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
 
-export type Runner = (command: string, args: string[], input?: string) => string;
-export type AsyncRunner = (command: string, args: string[], input?: string) => Promise<string>;
+/**
+ * Runs short GitHub metadata requests synchronously.
+ */
 const execute: Runner = (command, args, input) => execFileSync(command, args, {
   encoding: 'utf8', input, stdio: ['pipe', 'pipe', 'pipe'],
 });
 
+/**
+ * Runs dispatch and monitoring requests without blocking the terminal.
+ */
 const executeAsync: AsyncRunner = (command, args, input) => new Promise((resolve, reject) => {
   const child = execFile(command, args, { encoding: 'utf8' }, (error, stdout) => {
     if (error) reject(error);
@@ -16,6 +23,8 @@ const executeAsync: AsyncRunner = (command, args, input) => new Promise((resolve
   child.stdin?.end(input);
 });
 
+export type Runner = (command: string, args: string[], input?: string) => string;
+export type AsyncRunner = (command: string, args: string[], input?: string) => Promise<string>;
 export class Gh {
   private run: Runner;
   private runAsync: AsyncRunner;
@@ -25,24 +34,14 @@ export class Gh {
   }
 
   getRepository() {
-    return JSON.parse(this.run('gh', ['repo', 'view', '--json', 'nameWithOwner,defaultBranchRef'])) as {
-      nameWithOwner: string; defaultBranchRef: { name: string } | null;
+    return JSON.parse(this.run('gh', ['repo', 'view', '--json', 'nameWithOwner'])) as {
+      nameWithOwner: string;
     };
   }
 
   getBranchSha(repo: string, branch: string): string {
     const result = JSON.parse(this.run('gh', ['api', `repos/${repo}/branches/${encodeURIComponent(branch)}`]));
     return result.commit.sha;
-  }
-
-  getWorkflowFile(repo: string, workflow: string, ref: string): string {
-    return this.run('gh', ['workflow', 'view', workflow.split('/').at(-1)!,
-      '--repo', repo, '--ref', ref, '--yaml']);
-  }
-
-  getFile(repo: string, path: string, ref: string): string {
-    return this.run('gh', ['api', '--method', 'GET', `repos/${repo}/contents/${path}`,
-      '-f', `ref=${ref}`, '-H', 'Accept: application/vnd.github.raw+json']);
   }
 
   runWorkflow(repo: string, workflow: string, branch: string, inputs: Record<string, string>) {
