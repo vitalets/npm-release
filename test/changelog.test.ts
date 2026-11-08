@@ -1,13 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  stampChangelog,
-  extractReleaseNotes,
-  updateCompareLinks,
-  extractReleasedVersions,
-  removeCompareLinks,
-  getRepositoryUrl,
-} from '../src/action/changelog.ts';
+import { getRepositoryUrl } from '../src/utils/repo.ts';
+import { stampChangelog } from '../src/changelog/release.ts';
+import { extractReleaseNotes, extractReleasedVersions } from '../src/changelog/parse.ts';
+import { updateCompareLinks, removeCompareLinks } from '../src/changelog/links.ts';
 
 const REPO_URL = 'https://github.com/owner/repo';
 
