@@ -277,6 +277,24 @@ https://github.com/your-org/your-package/actions/runs/123456789
 
 Dry runs skip the local update. If pulling is unsafe, the CLI provides manual instructions.
 
+### Changelog merge command
+
+Merge three changelog files without an interactive terminal:
+
+```sh
+npx --yes @vitalets/npm-release changelog-merge <base> <ours> <theirs>
+```
+
+The arguments are the common ancestor, current branch, and other branch, in that
+order. The command overwrites **ours** and exits `0` on success or nonzero on
+conflict or error. Base and theirs are read-only inputs.
+
+It preserves release history and combines independent Unreleased entries. When
+ordinary text merging is appropriate, it runs `git merge-file` (Git must be
+available on PATH). Ambiguous semantic changes produce a conflict block containing
+all three documents and a reason on stderr for manual resolution. This command
+does not register a Git merge driver or change repository configuration.
+
 ## Development
 
 See [DEVELOPMENT.md](DEVELOPMENT.md).
