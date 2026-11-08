@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-11-08
+
 - Add `changelog-merge-setup` to register the Keep a Changelog merge driver locally and ensure its root `.gitattributes` rule, including automatic setup through npm's `prepare` script.
 
 - Add a `changelog-merge` CLI command that preserves release history, combines independent entries, and falls back to Git text merging when appropriate.
@@ -101,7 +103,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.4.1...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/vitalets/npm-release/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/vitalets/npm-release/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/vitalets/npm-release/compare/v2.3.10...v2.4.0
 [2.3.10]: https://github.com/vitalets/npm-release/compare/v2.3.9...v2.3.10

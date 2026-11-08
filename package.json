@@ -1,7 +1,7 @@
 {
   "name": "@vitalets/npm-release",
   "description": "Interactive CLI for npm releases through GitHub Actions",
-  "version": "2.4.1",
+  "version": "2.5.0",
   "type": "module",
   "repository": {
     "type": "git",
