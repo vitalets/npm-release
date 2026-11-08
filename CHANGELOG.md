@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Add `changelog-merge-setup` to register the Keep a Changelog merge driver locally and ensure its root `.gitattributes` rule, including automatic setup through npm's `prepare` script.
+
 - Add a `changelog-merge` CLI command that preserves release history, combines independent entries, and falls back to Git text merging when appropriate.
 
 ## [2.4.1] - 2026-11-03

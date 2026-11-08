@@ -5,8 +5,8 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { mergeChangelog, type MergeInput } from '../changelog/merge/index.ts';
-import { logger } from '../utils/logger.ts';
+import { mergeChangelog, type MergeInput } from '../../changelog/merge/index.ts';
+import { logger } from '../../utils/logger.ts';
 
 /**
  * Documents the argument order used by Git's %O, %A, and %B placeholders.

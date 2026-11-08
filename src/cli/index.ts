@@ -14,7 +14,8 @@ import { npmVersionOperation } from '../action/versioning.ts';
 import { withSpinner } from './spinner.ts';
 import { updateLocal } from './local-update.ts';
 import { parseCliArgs } from './args.ts';
-import { runChangelogMerge } from './changelog-merge.ts';
+import { runChangelogMerge } from './changelog-merge/index.ts';
+import { runChangelogMergeSetup } from './changelog-merge/setup.ts';
 
 type ReleaseOptions = { workflow: string; branch?: string; channel?: string };
 type ReleaseContext = ReturnType<typeof prepareRelease>;
@@ -22,6 +23,32 @@ type ReleaseContext = ReturnType<typeof prepareRelease>;
 // Run only when executed directly, not when imported by tests or the demo.
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await main();
+}
+
+async function main() {
+  try {
+    if (process.argv[2] === 'changelog-merge-setup') {
+      process.exitCode = runChangelogMergeSetup(process.argv.slice(3));
+      return;
+    }
+    if (process.argv[2] === 'changelog-merge') {
+      process.exitCode = runChangelogMerge(process.argv.slice(3));
+      return;
+    }
+    const options = parseCliArgs(process.argv.slice(2));
+    if (options.help) {
+      console.log('Changelog merge: npx --yes @vitalets/npm-release changelog-merge <base> <ours> <theirs>\n');
+      console.log('Changelog merge setup: npx --yes @vitalets/npm-release changelog-merge-setup\n');
+      console.log("Usage: npm-release .github/workflows/release.yml [--branch <name>] [--channel <name>]\n\nBranch defaults to main. --channel skips the channel prompt; otherwise it is selected interactively.\nRequires a clean checkout on the selected branch, synchronized with GitHub.\nRequires Node.js 20+, git, and authenticated GitHub CLI (gh auth login).");
+    } else {
+      if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('Run this command in an interactive terminal.');
+      await release(options);
+    }
+  } catch (error) {
+    if ((error as Error).name === 'ExitPromptError') console.error(styleText('red', 'Release cancelled.'));
+    else console.error(styleText('red', `✖ ${(error as Error).message}`));
+    process.exitCode = 1;
+  }
 }
 
 /**
@@ -55,27 +82,6 @@ export function preview(current: string, channel: string, choice: string) {
   const version = channel === 'stable' ? inc(current, operation) : inc(current, operation, channel);
   if (!version) throw new Error(`Cannot calculate version for ${channel} ${choice}`);
   return version;
-}
-
-async function main() {
-  try {
-    if (process.argv[2] === 'changelog-merge') {
-      process.exitCode = runChangelogMerge(process.argv.slice(3));
-      return;
-    }
-    const options = parseCliArgs(process.argv.slice(2));
-    if (options.help) {
-      console.log('Changelog merge: npx --yes @vitalets/npm-release changelog-merge <base> <ours> <theirs>\n');
-      console.log("Usage: npm-release .github/workflows/release.yml [--branch <name>] [--channel <name>]\n\nBranch defaults to main. --channel skips the channel prompt; otherwise it is selected interactively.\nRequires a clean checkout on the selected branch, synchronized with GitHub.\nRequires Node.js 20+, git, and authenticated GitHub CLI (gh auth login).");
-    } else {
-      if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('Run this command in an interactive terminal.');
-      await release(options);
-    }
-  } catch (error) {
-    if ((error as Error).name === 'ExitPromptError') console.error(styleText('red', 'Release cancelled.'));
-    else console.error(styleText('red', `✖ ${(error as Error).message}`));
-    process.exitCode = 1;
-  }
 }
 
 function prepareRelease(options: ReleaseOptions, github: Gh, helpers: typeof git) {

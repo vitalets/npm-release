@@ -295,6 +295,44 @@ available on PATH). Ambiguous semantic changes produce a conflict block containi
 all three documents and a reason on stderr for manual resolution. This command
 does not register a Git merge driver or change repository configuration.
 
+### Changelog merge setup
+
+Setup automatically creates or updates the repository root's `.gitattributes` with this rule:
+
+```gitattributes
+/CHANGELOG.md merge=keep-a-changelog
+```
+
+Install `@vitalets/npm-release` as a dev dependency and add this script to the
+consumer repository's `package.json` (append it to an existing `prepare` script):
+
+```json
+{
+  "scripts": {
+    "prepare": "npx --yes @vitalets/npm-release changelog-merge-setup"
+  }
+}
+```
+
+Run `npm run prepare` once in your current checkout. After cloning, `npm install`
+or `npm ci` runs prepare automatically unless lifecycle scripts are disabled.
+Setup can also be run directly:
+
+```sh
+npx --yes @vitalets/npm-release changelog-merge-setup
+```
+
+Setup writes the driver's name and command to local Git config. Repeating it
+updates the same settings without adding duplicates. It skips successfully when
+Git or a working tree is unavailable, and reports configuration errors as failures.
+It preserves existing `.gitattributes` content and adds the rule if missing. Commit
+that file to share the rule with collaborators. It does not edit `package.json` or
+create or edit `CHANGELOG.md`.
+
+Git invokes the scoped `npx` command when merging the selected file. Keep the dev
+dependency installed for predictable local execution; otherwise npx may download
+the package. The driver configuration in Git config is local to each clone and is not committed.
+
 ## Development
 
 See [DEVELOPMENT.md](DEVELOPMENT.md).
