@@ -17,9 +17,13 @@ test('setup registers the scoped driver locally without modifying project files'
   const before = git(repo, ['status', '--porcelain']);
   const result = setup(repo);
   assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /✔ Root \.gitattributes already contains the required rule:/);
+  assert.match(result.stdout, /✔ Updated local Git config:/);
+  assert.match(result.stdout, /\[merge "keep-a-changelog"\]/);
   assert.equal(git(repo, ['config', '--local', '--get', 'merge.keep-a-changelog.driver']).trim(),
     'npx --yes @vitalets/npm-release changelog-merge "%O" "%A" "%B"');
-  assert.equal(git(repo, ['config', '--local', '--get', 'merge.keep-a-changelog.name']).trim(), 'Keep a Changelog merge');
+  assert.equal(git(repo, ['config', '--local', '--get-regexp', '^merge\\.keep-a-changelog\\.']).trim(),
+    'merge.keep-a-changelog.driver npx --yes @vitalets/npm-release changelog-merge "%O" "%A" "%B"');
   assert.equal(git(repo, ['status', '--porcelain']), before);
   assert.equal(readFileSync(join(repo.directory, 'package.json'), 'utf8'), '{"name":"foo"}\n');
   assert.equal(existsSync(join(repo.directory, 'CHANGELOG.md')), false);
@@ -31,9 +35,15 @@ test('repeated setup replaces stale driver values without duplicates', (t) => {
   git(repo, ['init']);
   git(repo, ['config', '--local', '--add', 'merge.keep-a-changelog.driver', 'old']);
   git(repo, ['config', '--local', '--add', 'merge.keep-a-changelog.driver', 'older']);
-  assert.equal(setup(repo).status, 0);
+  const initial = setup(repo);
+  assert.equal(initial.status, 0, initial.stderr);
+  assert.match(initial.stdout, /✔ Created root \.gitattributes:\n/);
+  assert.match(initial.stdout, /^\/CHANGELOG.md merge=keep-a-changelog$/m);
   const first = readFileSync(join(repo.directory, '.git/config'), 'utf8');
-  assert.equal(setup(repo).status, 0);
+  const repeated = setup(repo);
+  assert.equal(repeated.status, 0, repeated.stderr);
+  assert.match(repeated.stdout, /✔ Root \.gitattributes already contains the required rule:/);
+  assert.match(repeated.stdout, /✔ Local Git config already contains the required merge driver:/);
   assert.equal(readFileSync(join(repo.directory, '.git/config'), 'utf8'), first);
   assert.equal(git(repo, ['config', '--local', '--get-all', 'merge.keep-a-changelog.driver']).trim().split('\n').length, 1);
   assert.equal(readFileSync(join(repo.directory, '.gitattributes'), 'utf8'), '/CHANGELOG.md merge=keep-a-changelog\n');
@@ -57,7 +67,9 @@ test('setup preserves existing attributes and adds the changelog rule after a mi
   const path = join(repo.directory, '.gitattributes');
   const original = '# merge=keep-a-changelog\r\nOTHER.md merge=keep-a-changelog\r\n*.md text';
   writeFileSync(path, original);
-  assert.equal(setup(repo).status, 0);
+  const result = setup(repo);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /✔ Updated root \.gitattributes:\n/);
   assert.equal(readFileSync(path, 'utf8'), original + '\r\n/CHANGELOG.md merge=keep-a-changelog\r\n');
   assert.equal(git(repo, ['check-attr', 'merge', '--', 'CHANGELOG.md']).trim(), 'CHANGELOG.md: merge: keep-a-changelog');
 });

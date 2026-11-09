@@ -11,6 +11,12 @@ import { logger } from '../../utils/logger.ts';
 const DRIVER = 'npx --yes @vitalets/npm-release changelog-merge "%O" "%A" "%B"';
 
 /**
+ * Git config representation of the registered merge driver.
+ */
+export const MERGE_DRIVER_CONFIG = `[merge "keep-a-changelog"]
+    driver = ${DRIVER.replaceAll('"', '\\"')}`;
+
+/**
  * Finds the repository root, skipping environments without Git or a working tree.
  */
 export function findWorkingTree() {
@@ -34,8 +40,17 @@ export function findWorkingTree() {
  * Replaces the local driver settings without accumulating duplicate values.
  */
 export function configureMergeDriver() {
-  checkGitResult(runGit(['config', '--local', '--replace-all', 'merge.keep-a-changelog.name', 'Keep a Changelog merge']));
+  const driver = readLocalConfig('merge.keep-a-changelog.driver');
+  if (driver === `${DRIVER}\n`) return 'unchanged';
   checkGitResult(runGit(['config', '--local', '--replace-all', 'merge.keep-a-changelog.driver', DRIVER]));
+  return 'updated';
+}
+
+function readLocalConfig(key: string) {
+  const result = runGit(['config', '--local', '--get-all', key]);
+  if (result.status === 1) return '';
+  checkGitResult(result);
+  return result.stdout;
 }
 
 function runGit(args: string[]) {

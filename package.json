@@ -25,6 +25,7 @@
     "test": "node --test test/*.test.ts test/changelog-merge/*.test.ts extension/test/*.test.ts",
     "sync": "git pull && git fetch --tags --force",
     "demo:cli": "node scripts/demo-cli.ts",
+    "demo:changelog-merge": "node scripts/demo-changelog-merge.ts",
     "release": "node src/cli/index.ts .github/workflows/release.yml",
     "release:next": "npm run release -- --channel next"
   },

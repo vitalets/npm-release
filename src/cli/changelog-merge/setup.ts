@@ -5,6 +5,7 @@
 import { logger } from '../../utils/logger.ts';
 import { ensureAttributes } from './git-attributes.ts';
 import { findWorkingTree, configureMergeDriver } from './git-config.ts';
+import { printSetupResult } from './setup-output.ts';
 
 /**
  * Describes the setup command, which takes no configuration arguments.
@@ -23,8 +24,8 @@ export function runChangelogMergeSetup(args: string[]) {
   if (args.length) throw new Error(USAGE);
   const root = findWorkingTree();
   if (root === undefined) return 0;
-  configureMergeDriver();
-  ensureAttributes(root);
-  logger.log('Configured keep-a-changelog merge driver in local Git config.');
+  const config = configureMergeDriver();
+  const attributes = ensureAttributes(root);
+  printSetupResult({ attributes, config });
   return 0;
 }

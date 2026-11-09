@@ -277,61 +277,48 @@ https://github.com/your-org/your-package/actions/runs/123456789
 
 Dry runs skip the local update. If pulling is unsafe, the CLI provides manual instructions.
 
-### Changelog merge command
+### Changelog Merge
 
-Merge three changelog files without an interactive terminal:
+After a release, merging the latest changes into your branch can cause conflicts
+in `CHANGELOG.md` if you have already added entries under `[Unreleased]`. The
+release moves existing entries into a versioned section while your branch still
+has them alongside your new changes.
 
-```sh
-npx --yes @vitalets/npm-release changelog-merge <base> <ours> <theirs>
+The changelog merge driver handles this automatically: it preserves release
+history and keeps new entries under `[Unreleased]`. Git uses it when merging
+`CHANGELOG.md` after the setup below. Changes that cannot be safely combined still
+require manual conflict resolution.
+
+### Changelog Merge Setup
+
+To set up changelog merging, assign a special merge driver to `CHANGELOG.md` in `.gitattributes` and define it in your local Git config.
+
+#### Manual
+
+Add this rule to the repository root's `.gitattributes`:
+
 ```
-
-The arguments are the common ancestor, current branch, and other branch, in that
-order. The command overwrites **ours** and exits `0` on success or nonzero on
-conflict or error. Base and theirs are read-only inputs.
-
-It preserves release history and combines independent Unreleased entries. When
-ordinary text merging is appropriate, it runs `git merge-file` (Git must be
-available on PATH). Ambiguous semantic changes produce a conflict block containing
-all three documents and a reason on stderr for manual resolution. This command
-does not register a Git merge driver or change repository configuration.
-
-### Changelog merge setup
-
-Setup automatically creates or updates the repository root's `.gitattributes` with this rule:
-
-```gitattributes
 /CHANGELOG.md merge=keep-a-changelog
 ```
 
-Install `@vitalets/npm-release` as a dev dependency and add this script to the
-consumer repository's `package.json` (append it to an existing `prepare` script):
+Then run this command inside the repository to configure the merge driver in the local git config:
 
-```json
-{
-  "scripts": {
-    "prepare": "npx --yes @vitalets/npm-release changelog-merge-setup"
-  }
-}
+```sh
+git config --local --replace-all merge.keep-a-changelog.driver 'npx --yes @vitalets/npm-release changelog-merge "%O" "%A" "%B"'
 ```
 
-Run `npm run prepare` once in your current checkout. After cloning, `npm install`
-or `npm ci` runs prepare automatically unless lifecycle scripts are disabled.
-Setup can also be run directly:
+#### Automatic
+
+Run this setup script inside the repository to perform both actions above. It creates or updates `.gitattributes` and configures the merge driver in
+`.git/config`:
 
 ```sh
 npx --yes @vitalets/npm-release changelog-merge-setup
 ```
 
-Setup writes the driver's name and command to local Git config. Repeating it
-updates the same settings without adding duplicates. It skips successfully when
-Git or a working tree is unavailable, and reports configuration errors as failures.
-It preserves existing `.gitattributes` content and adds the rule if missing. Commit
-that file to share the rule with collaborators. It does not edit `package.json` or
-create or edit `CHANGELOG.md`.
-
-Git invokes the scoped `npx` command when merging the selected file. Keep the dev
-dependency installed for predictable local execution; otherwise npx may download
-the package. The driver configuration in Git config is local to each clone and is not committed.
+After that, when you pull changes, Git uses the driver to merge `CHANGELOG.md`,
+automatically resolving conflicts caused by a release while keeping your new
+entries under `[Unreleased]`.
 
 ## Development
 

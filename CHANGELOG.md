@@ -3,8 +3,11 @@
 > This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
+- Simplify the changelog merge setup.
 
 ## [2.5.0] - 2026-11-08
+
+- Show colored status bullets and configuration snippets in `changelog-merge-setup`, distinguishing changes from existing configuration.
 
 - Add `changelog-merge-setup` to register the Keep a Changelog merge driver locally and ensure its root `.gitattributes` rule, including automatic setup through npm's `prepare` script.
 
