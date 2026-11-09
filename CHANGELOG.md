@@ -3,6 +3,8 @@
 > This project follows the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 ## [Unreleased]
+
+## [2.5.1] - 2026-11-09
 - Simplify the changelog merge setup.
 
 ## [2.5.0] - 2026-11-08
@@ -106,7 +108,8 @@
 - Pre-release support with `--tag next`
 - Dry-run mode
 
-[unreleased]: https://github.com/vitalets/npm-release/compare/v2.5.0...HEAD
+[unreleased]: https://github.com/vitalets/npm-release/compare/v2.5.1...HEAD
+[2.5.1]: https://github.com/vitalets/npm-release/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/vitalets/npm-release/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/vitalets/npm-release/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/vitalets/npm-release/compare/v2.3.10...v2.4.0
